@@ -660,11 +660,11 @@ CreateAccountList(instance) {
     if (!injectSortMethod)
         injectSortMethod := "ModifiedAsc"
 
-    parseInjectType := "Inject 13P+"  ; Default
+    parseInjectType := "CardFinder"  ; Default
 
     ; Determine injection type and pack ranges
-    if (deleteMethod = "Inject 13P+") {
-        parseInjectType := "Inject 13P+"
+    if (deleteMethod = "CardFinder") {
+        parseInjectType := "CardFinder"
         minPacks := 0
         maxPacks := 9999
     }

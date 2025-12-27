@@ -156,7 +156,7 @@ checkShouldDoMissions() {
             ; LogToFile("Executing missions for Inject Missions method (user setting enabled)")
         return true
     }
-    else if (deleteMethod = "Inject 13P+" || deleteMethod = "Inject Wonderpick 96P+") {
+    else if (deleteMethod = "CardFinder" || deleteMethod = "Inject Wonderpick 96P+") {
         ; if(verboseLogging)
             ; LogToFile("Skipping missions for " . deleteMethod . " method - missions only run for 'Inject Missions'")
         return false
