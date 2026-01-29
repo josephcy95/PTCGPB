@@ -53,6 +53,13 @@ if (InStr(defaultLanguage, "100")) {
 mumuFolder = %folderPath%\MuMuPlayerGlobal-12.0
 if !FileExist(mumuFolder)
     mumuFolder = %folderPath%\MuMu Player 12
+if !FileExist(adbPath) ;MuMu Player 12 v5 supported
+    adbPath := folderPath . "\MuMuPlayerGlobal-12.0\nx_main\adb.exe"
+if !FileExist(adbPath) ;MuMu Player 12 v5 supported
+    adbPath := folderPath . "\MuMu Player 12\nx_main\adb.exe"
+if !FileExist(adbPath) ;MuMu Player 12 v5 supported
+    adbPath := folderPath . "\MuMuPlayer\nx_main\adb.exe"
+
 if !FileExist(mumuFolder)
     mumuFolder = %folderPath%\MuMuPlayer
 
