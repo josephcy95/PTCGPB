@@ -283,9 +283,9 @@ if(useAdbManager) {
 }
 
 Sleep, 2000
-CreateStatusMessage("Disabling background services...")
-DisableBackgroundServices()
-Sleep, 5000
+; CreateStatusMessage("Disabling background services...")
+; DisableBackgroundServices()
+; Sleep, 5000
 
 resetWindows()
 
@@ -1205,7 +1205,7 @@ FindOrLoseImage(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT", E
     Path = %imagePath%App.png
     pNeedle := GetNeedle(Path)
     ; ImageSearch within the region
-    vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 225, 300, 242, 314, searchVariation)
+    vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 48, 174, 54, 183, searchVariation)
     if (vRet = 1) {
         restartGameInstance("Stuck at " . imageName . "...")
     }
@@ -1512,7 +1512,7 @@ FindImageAndClick(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT",
         Path = %imagePath%App.png
         pNeedle := GetNeedle(Path)
         ; ImageSearch within the region
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 225, 300, 242, 314, searchVariation)
+        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 48, 174, 54, 183, searchVariation)
         if (vRet = 1) {
             restartGameInstance("Stuck at " . imageName . "...")
         }
@@ -1947,6 +1947,12 @@ CheckPack() {
     ;        break
     ;    Delay(1)
     ; }
+    Loop {
+        if (CheckCardLoading() = 0)
+            break
+        Delay(1)
+    }
+    Delay(1)
 
     ; Determine total cards in pack for 4-diamond s4t calculations
     totalCardsInPack := currentPackIs6Card ? 6 : (currentPackIs4Card ? 4 : 5)
@@ -2218,9 +2224,9 @@ Screenshot_dev(fileType := "Dev",subDir := "") {
         Y3 -= 31
 
         ; Convert window coordinates to device/OCR coordinates
-        ; Device resolution: 540x960, Window resolution: 277x489, Y offset: 44
+        ; Device resolution: 540x960, Window resolution: 277 x 489, Y offset: 49
         OCR_X1 := Round(X1 * 540 / 277)
-        OCR_Y1 := Round((Y1 - 44) * 960 / 489)
+        OCR_Y1 := Round((Y1 - 49) * 960 / 489)
         OCR_W := Round(W * 540 / 277)
         OCR_H := Round(H * 960 / 489)
         OCR_X2 := OCR_X1 + OCR_W
@@ -2538,9 +2544,9 @@ adbSwipe_wbb(params) {
 bboxAndPause_swipe(params, doPause := False) {
     paramsplit := StrSplit(params , " ")
     X1:=round(paramsplit[1] / 535 * 277)
-    Y1:=round((paramsplit[2] / 960 * 489) + 44)
+    Y1:=round((paramsplit[2] / 960 * 489) + 49)
     X2:=round(paramsplit[3] / 535 * 277)
-    Y2:=round((paramsplit[4] / 960 * 489) + 44)
+    Y2:=round((paramsplit[4] / 960 * 489) + 49)
     speed:=paramsplit[5]
     CreateStatusMessage("Swiping (" . X1 . "," . Y1 . ") to (" . X2 . "," . Y2 . ") speed " . speed,,,, false)
 
@@ -2899,7 +2905,7 @@ DoTutorial() {
     Loop {
         adbSwipe_wbb("266 770 266 355 60")
         Sleep, 100
-        if(FindOrLoseImage(120, 70, 150, 95, , "SwipeUp", 0, failSafeTime)){
+        if(FindOrLoseImage(133, 72, 141, 78, , "SwipeUp", 0, failSafeTime)){
             if(setSpeed > 1) {
                 if(setSpeed = 3)
                     FindImageAndClick(187, 168, 191, 174, , "Three", 187, 172)

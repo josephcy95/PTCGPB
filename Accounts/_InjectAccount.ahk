@@ -99,6 +99,12 @@ if(!WinExist(winTitle)) {
 
 if !FileExist(adbPath) ;if international mumu file path isn't found look for chinese domestic path
     adbPath := folderPath . "\MuMu Player 12\shell\adb.exe"
+if !FileExist(adbPath) ;MuMu Player 12 v5 
+    adbPath := folderPath . "\MuMuPlayerGlobal-12.0\nx_main\adb.exe"
+if !FileExist(adbPath) ;MuMu Player 12 v5
+    adbPath := folderPath . "\MuMu Player 12\nx_main\adb.exe"
+if !FileExist(adbPath) ;MuMu Player 12 v5
+    adbPath := folderPath . "\MuMuPlayer\nx_main\adb.exe"
 
 if !FileExist(adbPath) {
     MsgBox, 16, , Double check your folder path! It should be the one that contains the MuMuPlayer 12 folder! `nDefault is just C:\Program Files\Netease
@@ -333,8 +339,14 @@ RunInstance:
     Gui, Submit, NoHide
     ; Find the MuMu folder
     mumuFolder := folderPath . "\MuMuPlayerGlobal-12.0"
-    if !FileExist(mumuFolder)
+    if !FileExist(mumuFolder) ;if international mumu file path isn't found look for chinese domestic path
         mumuFolder := folderPath . "\MuMu Player 12"
+    if !FileExist(mumuFolder) ;MuMu Player 12 v5 
+        mumuFolder := folderPath . "\MuMuPlayerGlobal-12.0\nx_main"
+    if !FileExist(mumuFolder) ;MuMu Player 12 v5
+        mumuFolder := folderPath . "\MuMu Player 12\nx_main"
+    if !FileExist(mumuFolder) ;MuMu Player 12 v5
+        mumuFolder := folderPath . "\MuMuPlayer\nx_main"
     ; Find the instance number matching the selected name
     instanceNum := ""
     Loop, Files, %mumuFolder%\vms\*, D
@@ -355,12 +367,22 @@ RunInstance:
     }
     if (instanceNum != "") {
         mumuExe := mumuFolder . "\shell\MuMuPlayer.exe"
+        if !FileExist(mumuExe) {
+            mumuExe := folderPath . "\MuMuPlayerGlobal-12.0\nx_main\MuMuNxMain.exe"
+        }
+        if !FileExist(mumuExe) {
+            mumuExe := folderPath . "\MuMu Player 12\nx_main\MuMuNxMain.exe"
+        }
+        if !FileExist(mumuExe) {
+            mumuExe := folderPath . "\MuMuPlayer\nx_main\MuMuNxMain.exe"
+        }
         if FileExist(mumuExe) {
             Run, "%mumuExe%" -v "%instanceNum%"
         } else {
             MsgBox, 16, Error, Could not find MuMuPlayer.exe at %mumuExe%
         }
-    } else {
-        MsgBox, 16, Error, Could not find instance number for %winTitle%
     }
+    else {
+        MsgBox, 16, Error, Could not find instance number for %winTitle%
+        }
     return

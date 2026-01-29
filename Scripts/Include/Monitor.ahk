@@ -17,6 +17,12 @@ Menu, Tray, Icon, %A_ScriptDir%\..\..\GUI\Icons\monitor.ico
 global Columns, runMain, Mains, defaultLanguage, scaleParam, SelectedMonitorIndex, titleHeight, MuMuv5
 global useADBManager
 
+Menu, Tray, Icon, %A_ScriptDir%\..\..\GUI\Icons\monitor.ico
+
+global Columns, runMain, Mains, defaultLanguage, scaleParam, SelectedMonitorIndex, titleHeight, MuMuv5
+global useADBManager
+
+lastReduceMemory := 0
 settingsPath := A_ScriptDir "\..\..\Settings.ini"
 IniRead, instanceLaunchDelay, %settingsPath%, UserSettings, instanceLaunchDelay, 5
 IniRead, waitAfterBulkLaunch, %settingsPath%, UserSettings, waitAfterBulkLaunch, 40000
@@ -65,6 +71,13 @@ Loop {
     InstancesWithXmls := Instances
 
     Loop %Instances% {
+        if(A_TickCount - lastReduceMemory > 120000) {
+            LogToFile("Memory reduction process start.", "Monitor.txt")
+            ReduceVMMemory()
+            LogToFile("Memory reduction process complete.", "Monitor.txt")
+            lastReduceMemory := A_TickCount
+        }
+
         instanceNum := Format("{:u}", A_Index)
 
         ; Instance .ini files are one level up (new structure)
@@ -246,6 +259,45 @@ Loop {
     }
 
     Sleep, 30000
+}
+
+ReduceVMMemory(){
+    TargetProcess := "MuMuVMMHeadless.exe"
+    CleanedCount := 0
+
+    for process in ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process Where Name = '" TargetProcess "'")
+    {
+        PID := process.ProcessId
+        
+        hProcess := DllCall("OpenProcess", "UInt", 0x0400 | 0x0100 | 0x0010, "Int", false, "UInt", PID)
+        
+        if (hProcess)
+        {
+            MemBefore := GetProcessMemory(hProcess)
+            Success := DllCall("psapi.dll\EmptyWorkingSet", "Ptr", hProcess)
+            MemAfter := GetProcessMemory(hProcess)
+            
+            DllCall("CloseHandle", "Ptr", hProcess)
+            
+            if (Success) {
+                ;ResultLine := "PID: " . PID . " | Before: " . Round(MemBefore, 1) . "KB | After: " . Round(MemAfter, 1) . "KB | Reduced size: " . Round(MemBefore-MemAfter, 1) . "KB`n"
+                LogToFile(ResultLine, "Development.txt")
+                CleanedCount++
+            }
+        }
+    }
+    LogToFile("Total reduce memory count: " . CleanedCount, "Monitor.txt")
+    return CleanedCount
+}
+
+GetProcessMemory(hProcess) {
+    VarSetCapacity(PMC, 72, 0)
+    if (DllCall("psapi.dll\GetProcessMemoryInfo", "Ptr", hProcess, "Ptr", &PMC, "UInt", 72)) {
+        addrOffset := (A_PtrSize = 8) ? 16 : 12
+        bytes := NumGet(PMC, addrOffset, "UPtr")
+        return bytes / 1024 
+    }
+    return 0
 }
 
 killAHK(scriptName := "")
