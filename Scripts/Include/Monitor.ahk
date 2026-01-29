@@ -51,7 +51,7 @@ if !FileExist(mumuFolder)
     mumuFolder = %folderPath%\MuMuPlayer
 
 ; Set MuMuManager.exe location
-mumuManagerPath := mumuFolder "\shell\MuMuManager.exe"
+mumuManagerPath := mumuFolder "\nx_main\MuMuManager.exe"
 
 if !FileExist(mumuFolder){
     MsgBox, 16, , Can't Find MuMu folder! Double check your folderPath in Settings.ini.`nDefault is C:\Program Files\Netease
