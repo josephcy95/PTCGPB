@@ -52,13 +52,15 @@ if (InStr(defaultLanguage, "100")) {
 
 mumuFolder = %folderPath%\MuMuPlayerGlobal-12.0
 if !FileExist(mumuFolder)
-    mumuFolder = %folderPath%\MuMu Player 12
-if !FileExist(adbPath) ;MuMu Player 12 v5 supported
-    adbPath := folderPath . "\MuMuPlayerGlobal-12.0\nx_main\adb.exe"
-if !FileExist(adbPath) ;MuMu Player 12 v5 supported
-    adbPath := folderPath . "\MuMu Player 12\nx_main\adb.exe"
-if !FileExist(adbPath) ;MuMu Player 12 v5 supported
-    adbPath := folderPath . "\MuMuPlayer\nx_main\adb.exe"
+mumuFolder := folderPath "\MuMuPlayerGlobal-12.0"
+if !FileExist(mumuFolder)
+    mumuFolder := folderPath "\MuMu Player 12"
+if !FileExist(mumuFolder)
+    mumuFolder := folderPath "\MuMuPlayerGlobal-12.0"
+if !FileExist(mumuFolder)
+    mumuFolder := folderPath "\MuMu Player 12"
+if !FileExist(mumuFolder)
+    mumuFolder := folderPath "\MuMuPlayer"
 
 if !FileExist(mumuFolder)
     mumuFolder = %folderPath%\MuMuPlayer
@@ -67,7 +69,7 @@ if !FileExist(mumuFolder)
 mumuManagerPath := mumuFolder "\nx_main\MuMuManager.exe"
 
 if !FileExist(mumuFolder){
-    MsgBox, 16, , Can't Find MuMu folder! Double check your folderPath in Settings.ini.`nDefault is C:\Program Files\Netease
+    MsgBox, 16, , Double check your folder path! It should be the one that contains the MuMuPlayer 12 folder! `nDefault is just C:\Program Files\Netease
     ExitApp
 }
 
