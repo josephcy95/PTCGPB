@@ -90,7 +90,8 @@ baseButtonText["ToggleAHK6"] := "6"
 
 ; Main Instance Control Section
 Gui, Add, GroupBox, x10 y450 w300 h60 c%monokaiGroupTitle% Background%monokaiGroup%, Main Instance Control
-Gui, Add, Button, x20 y470 w280 h30 gKillMainInstance Background%monokaiButton% c%monokaiText%, Kill Main Instance
+Gui, Add, Button, x20  y470 w135 h30 gToggleMainMuMu   vToggleMainMuMu   Background%monokaiButton% c%monokaiText%, Main MuMu
+Gui, Add, Button, x165 y470 w135 h30 gToggleMainAHK   vToggleMainAHK   Background%monokaiButton% c%monokaiText%, Main AHK
 
 ; Status Section
 Gui, Add, GroupBox, x10 y520 w300 h120 c%monokaiGroupTitle% Background%monokaiGroup%, Running Instances / AHK
@@ -259,14 +260,25 @@ ToggleAHK6:
     Gosub, UpdateStatus
 return
 
-KillMainInstance:
+ToggleMainMuMu:
     if (runMain) {
         Loop %Mains% {
             mainInstanceName := "Main" . (A_Index > 1 ? A_Index : "")
-            killInstance(mainInstanceName)
-            killAHK(mainInstanceName . ".ahk")
+            toggleInstance(mainInstanceName)
         }
     }
+    Sleep, 600
+    Gosub, UpdateStatus
+return
+
+ToggleMainAHK:
+    if (runMain) {
+        Loop %Mains% {
+            mainInstanceName := "Main" . (A_Index > 1 ? A_Index : "")
+            toggleAHK(mainInstanceName . ".ahk")
+        }
+    }
+    Sleep, 600
     Gosub, UpdateStatus
 return
 
@@ -661,15 +673,18 @@ toggleInstance(instanceNum := "") {
     }
 }
 
-; Function to launch a MuMu instance
-launchInstance(instanceNum := "") {
+launchInstance(instanceNum := "")
+{
     global mumuFolder
 
     if(instanceNum != "") {
         mumuNum := getMumuInstanceNumFromPlayerName(instanceNum)
         if(mumuNum != "") {
-            ; Run, %mumuFolder%\shell\MuMuPlayer.exe -v %mumuNum%
-            Run_(mumuFolder . "\shell\MuMuPlayer.exe", "-v " . mumuNum)
+            ; Run_(mumuFolder . "\shell\MuMuPlayer.exe", "-v " . mumuNum)
+            mumuExe := mumuFolder . "\shell\MuMuPlayer.exe"
+            if !FileExist(mumuExe)
+                mumuExe := mumuFolder . "\nx_main\MuMuNxMain.exe"
+            Run_(mumuExe, "-v " . mumuNum)
         }
     }
 }
@@ -792,6 +807,18 @@ updateButtonColors() {
         } else {
             GuiControl,, %btnName%, % baseText  ; Show only base text when OFF
         }
+    }
+
+    if (checkInstance("Main")) {
+        GuiControl,, ToggleMainMuMu, Main MuMu *
+    } else {
+        GuiControl,, ToggleMainMuMu, Main MuMu
+    }
+
+    if (checkAHK("Main.ahk")) {
+        GuiControl,, ToggleMainAHK, Main AHK *
+    } else {
+        GuiControl,, ToggleMainAHK, Main AHK
     }
     
     ; Update utility script buttons
