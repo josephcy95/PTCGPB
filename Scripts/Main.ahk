@@ -840,13 +840,14 @@ RemoveNonVipFriends() {
 	scrolledWithoutFriend := 0
     recentFriendAccounts := []
     Loop {
+        if (scrolledWithoutFriend == 4){
+            SoundBeep, 750, 500
+            SoundBeep, 400, 500
+            SoundBeep, 1000, 500
+        }
         if (scrolledWithoutFriend > 5){
             CreateStatusMessage("End of list - scrolled without friend codes multiple times.`nReady to test.")
-            if(!autoUseGPTest) {
-                SoundBeep, 750, 500
-                SoundBeep, 400, 500
-                SoundBeep, 1000, 500
-            }
+
             if(A_gptest && autoUseGPTest) {
                 A_gptest := 0
                 autotest := A_TickCount
