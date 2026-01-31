@@ -158,7 +158,13 @@ Loop {
     Sleep, %Delay%
     FindImageAndClick(120, 500, 155, 530, , "Social", 143, 518, 1000, 30)
     FindImageAndClick(226, 100, 270, 135, , "Add", 38, 460, 500)
-    FindImageAndClick(170, 450, 195, 480, , "Approve", 228, 464)
+    if(FindImageAndClick(170, 450, 195, 480, , "Approve", 228, 464)){
+        now := A_NowUTC
+        IniWrite, %now%, %A_ScriptDir%\%scriptName%.ini, Metrics, LastApproveTimeUTC
+        EnvSub, now, 1970, seconds
+        IniWrite, %now%, %A_ScriptDir%\%scriptName%.ini, Metrics, LastApproveEpoch
+    }
+
     /* ; Deny all option
     if(firstRun) {
         Sleep, 1000
