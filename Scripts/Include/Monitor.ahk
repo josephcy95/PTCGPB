@@ -79,6 +79,95 @@ Loop {
 
     InstancesWithXmls := Instances
 
+    if (runMain) {
+        mainIni := A_ScriptDir "\..\Main.ini"
+
+        IniRead, LastApproveEpoch, %mainIni%, Metrics, LastApproveEpoch, 0
+
+        if (LastApproveEpoch > 0) {
+            secondsSinceLastApprove := nowEpoch - LastApproveEpoch
+
+            if (secondsSinceLastApprove > 120) {
+                LogToFile("Main.ahk appears stuck - no Approve activity for " 
+                    . secondsSinceLastApprove . " seconds. Restarting...", "Monitor.txt")
+
+                ; Kill phase
+                killAHK("Main.ahk")
+
+                killInstance("Main")
+
+                Sleep, % instanceLaunchDelay * 1000
+
+                ; Quick verification
+                if (checkAHK("Main.ahk") || checkInstance("Main")) {
+                    LogToFile("Warning: Main processes did not fully terminate.", "Monitor.txt")
+                } else {
+                    LogToFile("Main processes terminated successfully.", "Monitor.txt")
+
+                    launchSuccess := false
+
+                    Loop, 3 {
+                        launchInstance("Main")
+                        Sleep, % instanceLaunchDelay * 1000
+                        Sleep, %waitAfterBulkLaunch%
+
+                        if (checkInstance("Main")) {
+                            launchSuccess := true
+                            break
+                        }
+                        LogToFile("Main launch attempt " . A_Index . "/3 failed.", "Monitor.txt")
+                        Sleep, 10000
+                    }
+
+                    if (!launchSuccess) {
+                        LogToFile("ERROR: Failed to restart Main instance after 3 attempts.", "Monitor.txt")
+                    } else {
+                        ; Position window
+                        DirectlyPositionWindow("Main")
+                        Sleep, 2000
+
+                        ; Relaunch Main.ahk script
+                        scriptPath := A_ScriptDir "\..\Main.ahk"
+                        scriptSuccess := false
+
+                        Loop, 3 {
+                            Run "%A_AhkPath%" /restart "%scriptPath%"
+                            Sleep, 2000
+
+                            if (checkAHK("Main.ahk")) {
+                                scriptSuccess := true
+                                break
+                            }
+                            LogToFile("Main.ahk launch attempt " . A_Index . "/3 failed.", "Monitor.txt")
+                            Sleep, 3000
+                        }
+
+                        if (scriptSuccess) {
+                            LogToFile("Main.ahk and instance successfully restarted.", "Monitor.txt")
+                        } else {
+                            LogToFile("ERROR: Failed to restart Main.ahk script after 3 attempts.", "Monitor.txt")
+                        }
+                    }
+
+                    ; reset the timestamp to prevent immediate re-trigger
+                    IniWrite, %nowEpoch%, %mainIni%, Metrics, LastApproveEpoch
+                }
+            }
+            else {
+                LogToFile("Main.ahk is responsive - last Approve " . secondsSinceLastApprove . "s ago.", "Monitor.txt")
+            }
+        }
+        else {
+            ; No heartbeat ever written → assume it's not started yet or crashed badly
+            LogToFile("Main.ahk has no LastApproveEpoch recorded. Checking if running...", "Monitor.txt")
+
+            if (!checkAHK("Main.ahk") || !checkInstance("Main")) {
+                LogToFile("Main not detected as running → attempting launch.", "Monitor.txt")
+                ; You can insert the same launch/restart code here if desired
+            }
+        }
+    }
+
     Loop %Instances% {
         if(A_TickCount - lastReduceMemory > 120000) {
             LogToFile("Memory reduction process start.", "Monitor.txt")
