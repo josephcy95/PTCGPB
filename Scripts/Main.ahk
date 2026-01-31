@@ -799,6 +799,10 @@ GPTestScript() {
     global triggerTestNeeded
     triggerTestNeeded := false
     RemoveNonVipFriends()
+    ; make a sound when gptest is done and ready for checking gp
+    SoundBeep, 750, 500
+    SoundBeep, 400, 500
+    SoundBeep, 1000, 500
 }
 
 ; Automation script for removing Non-VIP firends.
@@ -844,11 +848,6 @@ RemoveNonVipFriends() {
 	scrolledWithoutFriend := 0
     recentFriendAccounts := []
     Loop {
-        if (scrolledWithoutFriend == 4){
-            SoundBeep, 750, 500
-            SoundBeep, 400, 500
-            SoundBeep, 1000, 500
-        }
         if (scrolledWithoutFriend > 5){
             CreateStatusMessage("End of list - scrolled without friend codes multiple times.`nReady to test.")
 
