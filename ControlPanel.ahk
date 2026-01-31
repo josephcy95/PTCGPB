@@ -768,10 +768,11 @@ toggleAHK(scriptName := "") {
                 LogToFile("Killed script " . scriptName, "ControlPanel.txt")
             } else {
                 ; Launch the script if it's not running
-                if RegExMatch(scriptName, "^\d+\.ahk$")
+                if(RegExMatch(scriptName, "^\d+\.ahk$") || (scriptName = "Main.ahk")) {
                     Run, %A_ScriptDir%\Scripts\%scriptName%
-                else
+                } else {
                     Run, %A_ScriptDir%\%scriptName%
+                }
                 LogToFile("Launched script " . scriptName, "ControlPanel.txt")
             }
         }
