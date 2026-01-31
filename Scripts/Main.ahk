@@ -77,6 +77,10 @@ IniRead, autoUseGPTest, %A_ScriptDir%\..\Settings.ini, UserSettings, autoUseGPTe
 IniRead, TestTime, %A_ScriptDir%\..\Settings.ini, UserSettings, TestTime, 3600
 global MuMuv5
 MuMuv5 := isMuMuv5()
+
+; Reset ini for monitoring
+IniWrite, 0, %A_ScriptDir%\%scriptName%.ini, Metrics, InGPTestMode
+
 ; connect adb
 instanceSleep := scriptName * 1000
 Sleep, %instanceSleep%
