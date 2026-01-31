@@ -904,7 +904,7 @@ RemoveNonVipFriends() {
 					scrolledWithoutFriend := 0
 				}
                 Sleep, 1500 ; Time to read
-                FindImageAndClick(226, 100, 270, 135, , "Add", 143, 507, 1000)
+                FindImageAndClick(226, 100, 270, 135, , "Add", 143, 507, 1500)
                 Delay(2)
                 if (friendIndex < 2)
                     friendIndex++
@@ -930,7 +930,7 @@ RemoveNonVipFriends() {
                 FindImageAndClick(135, 355, 160, 385, , "Remove", 145, 407, 500)
                 FindImageAndClick(70, 395, 100, 420, , "Send2", 200, 372, 500)
                 Delay(1)
-                FindImageAndClick(226, 100, 270, 135, , "Add", 143, 507, 1000)
+                FindImageAndClick(226, 100, 270, 135, , "Add", 143, 507, 1500)
                 Delay(3)
 				scrolledWithoutFriend := 0
             }
