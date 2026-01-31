@@ -73,6 +73,8 @@ if !FileExist(mumuFolder){
     ExitApp
 }
 
+Sleep, 120000
+
 Loop {
     nowEpoch := A_NowUTC
     EnvSub, nowEpoch, 1970, seconds
@@ -103,7 +105,7 @@ Loop {
         if (LastApproveEpoch > 0) {
             secondsSinceLastApprove := nowEpoch - LastApproveEpoch
 
-            if (secondsSinceLastApprove > 120) {
+            if (secondsSinceLastApprove > (5 * 60)) {
                 LogToFile("Main.ahk appears stuck - no Approve activity for " 
                     . secondsSinceLastApprove . " seconds. Restarting...", "Monitor.txt")
 
