@@ -610,6 +610,12 @@ ToggleTestScript() {
         CreateStatusMessage("In GP Test Mode",,,, false)
         StartSkipTime := A_TickCount ;reset stuck timers
         failSafe := A_TickCount
+
+        ; For monitor script
+        now := A_NowUTC
+        EnvSub, now, 1970, seconds
+        IniWrite, %now%, %A_ScriptDir%\%scriptName%.ini, Metrics, LastGPTestEpoch
+        IniWrite, 1, %A_ScriptDir%\%scriptName%.ini, Metrics, InGPTestMode
     }
     else {
         GPTest := false
@@ -621,6 +627,9 @@ ToggleTestScript() {
             testStartTime := ""
         }
         CreateStatusMessage("Exiting GP Test Mode",,,, false)
+
+        ; For monitor script
+        IniWrite, 0, %A_ScriptDir%\%scriptName%.ini, Metrics, InGPTestMode
     }
 }
 
@@ -833,6 +842,11 @@ RemoveNonVipFriends() {
     Loop {
         if (scrolledWithoutFriend > 5){
             CreateStatusMessage("End of list - scrolled without friend codes multiple times.`nReady to test.")
+            if(!autoUseGPTest) {
+                SoundBeep, 750, 500
+                SoundBeep, 400, 500
+                SoundBeep, 1000, 500
+            }
             if(A_gptest && autoUseGPTest) {
                 A_gptest := 0
                 autotest := A_TickCount

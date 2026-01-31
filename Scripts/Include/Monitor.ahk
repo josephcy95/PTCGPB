@@ -79,8 +79,24 @@ Loop {
 
     InstancesWithXmls := Instances
 
-    if (runMain) {
-        mainIni := A_ScriptDir "\..\Main.ini"
+    mainIni := A_ScriptDir "\..\Main.ini"
+    IniRead, InGPTestMode, %mainIni%, Metrics, InGPTestMode, 0
+    IniRead, LastGPTestEpoch, %mainIni%, Metrics, LastGPTestEpoch, 0
+    secondsSinceGPTest := nowEpoch - LastGPTestEpoch
+
+    if(secondsSinceGPTest > 7200){
+        ; Reset flag after 2 hours in case forget, auto exit gptest, but make some noise first in case it's intentional
+        LogToFile("Resetting InGPTestMode flag after 2 hours.", "Monitor.txt")
+        SoundBeep, 750, 500
+        SoundBeep, 400, 500
+        SoundBeep, 1000, 500
+        Sleep, 15000
+        InGPTestMode := 0
+        IniWrite, 0, %mainIni%, Metrics, InGPTestMode
+    }
+
+    if (runMain && InGPTestMode == 0) {
+
 
         IniRead, LastApproveEpoch, %mainIni%, Metrics, LastApproveEpoch, 0
 
