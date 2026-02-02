@@ -336,9 +336,10 @@ OpenProjectFolder:
 return
 
 ArrangeWindows:
-    ; MuMuv5 := isMuMuv5()
+    Gui, Submit, NoHide
+    SaveAllSettings()
     LoadSettingsFromIni()
-    MuMuv5 := 0
+    MuMuv5 := isMuMuv5()
 
     if (defaultLanguage = "Scale125") {
        if (MuMuv5) {
