@@ -884,7 +884,8 @@ updateStatistics() {
     ; Calculate rate (accounts per hour)
     hours := timeElapsed / 60
     rate := hours > 0 ? Round(accountProcessed / hours, 2) : 0
-    GuiControl,, AccRate, Rate: %rate% acc/hr
+    packpermin := Round((rate * 2) / 60, 2)
+    GuiControl,, AccRate, Rate: %rate% acc/hr (%packpermin% p/m)
     
     ; Calculate accounts left
     accountsLeft := 0
