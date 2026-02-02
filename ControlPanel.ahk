@@ -10,8 +10,6 @@ if not A_IsAdmin
     ExitApp
 }
 
-#Include Utils.ahk
-
 global useADBManager, Instances
 
 ; Read settings from the main script's settings file
@@ -1190,4 +1188,19 @@ IsNumeric(var) {
    if var is number
       return true
    return false
+}
+
+;-------------------------------------------------------------------------------
+; isMuMuv5 - Detect if MuMu Player version 5 is being used
+;-------------------------------------------------------------------------------
+isMuMuv5(){
+    global folderPath
+    mumuFolder := folderPath . "\MuMuPlayerGlobal-12.0"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMu Player 12"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMuPlayer"
+    if FileExist(mumuFolder . "\nx_main")
+        return true
+    return false
 }
