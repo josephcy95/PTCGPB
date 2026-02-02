@@ -73,7 +73,9 @@ Gui, Add, Button, x245 y150 w40 h30 gCleanDisk6 Background%monokaiButton% c%mono
 
 ; AHK Script Control Section
 Gui, Add, GroupBox, x10 y260 w300 h180 c%monokaiGroupTitle% Background%monokaiGroup%, AHK Script Control
-Gui, Add, Button, x20 y280 w280 h30 gKillAllAHK Background%monokaiButton% c%monokaiText%, Kill All AHK Scripts
+Gui, Add, Button, x20 y280 w135 h30 gKillAllAHK Background%monokaiButton% c%monokaiText%, Kill All AHK
+Gui, Add, Button, x165 y280 w135 h30 gGraceStopping Background%monokaiButton% c%monokaiText%, Grace Stop All
+
 Gui, Add, Text, x20 y320 c%monokaiText%, Toggle AHK Scripts:
 Gui, Add, Button, x20 y340 w40 h30 gToggleAHK1 vToggleAHK1 Background%monokaiButton% c%monokaiText%, 1
 baseButtonText["ToggleAHK1"] := "1"
@@ -147,6 +149,19 @@ KillAllMumu:
     ; Force kill even stuborn stuck background process.
     killFreezeMuMuBackgroundService()
     MsgBox, All instances have been shutdown.
+    Gosub, UpdateStatus
+return
+
+; Grace Stopping all AHK
+GraceStopping:
+    killAHK("Monitor.ahk")
+    killAHK("PTCGPB.ahk")
+
+    Loop %Instances% {
+        metricFile := A_ScriptDir . "\Scripts\" . A_Index . ".ini"
+        IniWrite, 1, %metricFile%, Metrics, DoGraceStop
+    }
+
     Gosub, UpdateStatus
 return
 

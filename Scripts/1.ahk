@@ -233,6 +233,9 @@ IniRead, rerolls, %A_ScriptDir%\%scriptName%.ini, Metrics, rerolls, 0
 IniRead, rerollStartTime, %A_ScriptDir%\%scriptName%.ini, Metrics, rerollStartTime, A_TickCount
 ;rerollstartTime := A_TickCount
 
+; Stopping with ControlPanel
+IniWrite, 0, %A_ScriptDir%\%scriptName%.ini, Metrics, DoGraceStop
+
 ; Initialize no limit to max account pack number if running save for trade
 if(s4tEnabled){
     maxAccountPackNum := 9999
@@ -386,6 +389,22 @@ if(DeadCheck = 1 && deleteMethod != "Create Bots (13P)") {
     ; in injection mode, we dont need to reload
 
     Loop {
+        ; ControlPanel - gracestop
+        IniRead, DoGraceStop, %A_ScriptDir%\%scriptName%.ini, Metrics, DoGraceStop, 0
+        if (DoGraceStop) {
+            stopToggle := true
+        }
+
+        if (stopToggle) {
+            if (useAdbManager) {
+                adbScriptName := scriptName . ".adbmanager.ahk"
+                killAHK(adbScriptName)
+            }
+
+            CreateStatusMessage("Stopping...",,,, false)
+            ExitApp
+        }
+
         clearMissionCache()
         Randmax := packArray.Length()
         Random, rand, 1, Randmax
@@ -870,7 +889,18 @@ if(DeadCheck = 1 && deleteMethod != "Create Bots (13P)") {
 
                 restartGameInstance("New Run", false)
             } else {
+                ; ControlPanel - gracestop
+                IniRead, DoGraceStop, %A_ScriptDir%\%scriptName%.ini, Metrics, DoGraceStop, 0
+                if (DoGraceStop) {
+                    stopToggle := true
+                }
+
                 if (stopToggle) {
+                    if (useAdbManager) {
+                        adbScriptName := scriptName . ".adbmanager.ahk"
+                        killAHK(adbScriptName)
+                    }
+
                     CreateStatusMessage("Stopping...",,,, false)
                     ExitApp
                 }
@@ -4314,6 +4344,30 @@ GoToMain(fromSocial := false) {
         FindImageAndClick(120, 500, 155, 530, , "Social", 143, 518)
         FindImageAndClick(191, 393, 211, 411, , "Shop", 20, 515, 500) ;click until at main menu
     }
+}
+
+killAHK(scriptName := "") {
+    killed := 0
+    if(scriptName != "") {
+        DetectHiddenWindows, On
+        WinGet, IDList, List, ahk_class AutoHotkey
+        Loop %IDList% {
+            ID:=IDList%A_Index%
+            WinGetTitle, ATitle, ahk_id %ID%
+            if InStr(ATitle, "\" . scriptName) {
+                WinGet, pid, PID, ahk_id %ID%
+                WinKill, ahk_id %ID%
+                killed := killed + 1
+                
+                ; Verify process is actually dead
+                Process, Exist, %pid%
+                if (ErrorLevel) {
+                    RunWait, taskkill /f /pid %pid% /t,, Hide
+                }
+            }
+        }
+    }
+    return killed
 }
 
 ;levelUp()
