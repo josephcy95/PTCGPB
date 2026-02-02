@@ -336,8 +336,6 @@ OpenProjectFolder:
 return
 
 ArrangeWindows:
-    Gui, Submit, NoHide
-    SaveAllSettings()
     LoadSettingsFromIni()
     MuMuv5 := isMuMuv5()
 
