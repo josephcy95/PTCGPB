@@ -106,7 +106,7 @@ SetTitleMatchMode, 3
 
 OnError("ErrorHandler")
 
-githubUser := "kevnITG"
+githubUser := "josephcy95"
    ,repoName := "PTCGPB"
    ,localVersion := "v9.3.8"
    ,scriptFolder := A_ScriptDir
@@ -360,7 +360,7 @@ NextStep:
    }
 
    Gui, Font, s10 cWhite
-   Gui, Add, Picture, gOpenDiscord x455 y320 w36 h36, %A_ScriptDir%\GUI\Images\discord-icon.png
+   Gui, Add, Picture, gOpenGithub x455 y320 w36 h36, %A_ScriptDir%\GUI\Images\github-icon.png
    Gui, Add, Picture, gOpenToolTip x505 y320 w36 h36, %A_ScriptDir%\GUI\Images\help-icon.png
    Gui, Add, Picture, gShowToolsAndSystemSettings x555 y322 w32 h32, %A_ScriptDir%\GUI\Images\tools-icon.png
 
@@ -370,11 +370,12 @@ NextStep:
    Gui, Font, s12 cWhite Bold
    Gui, Add, Text, x621 y20 w155 h50 Left BackgroundTrans cWhite, % currentDictionary.title_main
    Gui, Font, s10 cWhite Bold
-   Gui, Add, Text, x621 y20 w155 h50 Left BackgroundTrans cWhite, % "`nv9.3.8 kevinnnn"
+   Gui, Add, Text, x621 y20 w155 h50 Left BackgroundTrans cWhite, % "`n" . localVersion
 
    Gui, Add, Picture, gBuyMeCoffee x625 y60, %A_ScriptDir%\GUI\Images\support_me_on_kofi.png
 
    Gui, Font, s10 cWhite Bold
+   Gui, Add, Button, x621 y170 w155 h25 gRunControlPanel BackgroundTrans, % "Control Panel"
    Gui, Add, Button, x621 y205 w155 h25 gBalanceXMLs BackgroundTrans, % currentDictionary.btn_balance
    Gui, Add, Button, x621 y240 w155 h40 gLaunchAllMumu BackgroundTrans, % currentDictionary.btn_mumu
    Gui, Add, Button, gSave x621 y290 w155 h40, Start Bot
@@ -382,7 +383,7 @@ NextStep:
    Gui, Font, s7 cGray
    Gui, Add, Text, x620 y340 w165 Center BackgroundTrans, CC BY-NC 4.0 international license
 
-   Gui, Show, w%GUI_WIDTH% h%GUI_HEIGHT%, Arturo's PTCGP BOT
+   Gui, Show, w%GUI_WIDTH% h%GUI_HEIGHT%, Arturo's PTCGP BOT %localVersion%
 
 Return
 
@@ -1794,15 +1795,15 @@ DiscordLink:
 Return
 
 BuyMeCoffee:
-   Run, https://ko-fi.com/kevnitg
+   Run, https://github.com/kevnITG/PTCGPB
 return
 
 OpenToolTip:
    Run, https://mixman208.github.io/PTCGPB/
 return
 
-OpenDiscord:
-   Run, https://discord.gg/C9Nyf7P4sT
+OpenGithub:
+   Run, https://github.com/josephcy95/PTCGPB
 return
 
 OpenTradesDashboard:
@@ -1817,6 +1818,11 @@ Return
 
 RunXMLDuplicateTool:
    Tool := A_ScriptDir . "\Accounts\xml_duplicate_finder.ahk"
+   RunWait, %Tool%
+Return
+
+RunControlPanel:
+   Tool := A_ScriptDir . "\ControlPanel.ahk"
    RunWait, %Tool%
 Return
 
@@ -2986,8 +2992,7 @@ CheckForUpdate() {
       
       updateAvailable := "Update Available: "
       latestDownloaad := "Download Latest Version?"
-      warnMessages := "(You're using a forked version, so this may break things. I advise checking the forked github repo.)"
-      MsgBox, 262148, %updateAvailable% %latestVersion%, %releaseNotes%`n`nDo you want to download the latest version? %warnMessages%
+      MsgBox, 262148, %updateAvailable% %latestVersion%, %releaseNotes%`n`nDo you want to download the latest version?
       
       IfMsgBox, Yes
       {
