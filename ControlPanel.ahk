@@ -10,6 +10,8 @@ if not A_IsAdmin
     ExitApp
 }
 
+#Include Utils.ahk
+
 global useADBManager, Instances
 
 ; Read settings from the main script's settings file
