@@ -171,9 +171,6 @@ Loop {
                     IniWrite, %nowEpoch%, %mainIni%, Metrics, LastApproveEpoch
                 }
             }
-            else {
-                LogToFile("Main.ahk is responsive - last Approve " . secondsSinceLastApprove . "s ago.", "Monitor.txt")
-            }
         }
         else {
             ; No heartbeat ever written → assume it's not started yet or crashed badly

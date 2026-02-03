@@ -80,7 +80,6 @@ MuMuv5 := isMuMuv5()
 
 ; Reset ini for monitoring
 now := A_NowUTC
-IniWrite, %now%, %A_ScriptDir%\%scriptName%.ini, Metrics, LastApproveTimeUTC
 EnvSub, now, 1970, seconds
 IniWrite, %now%, %A_ScriptDir%\%scriptName%.ini, Metrics, LastApproveEpoch
 IniWrite, 0, %A_ScriptDir%\%scriptName%.ini, Metrics, InGPTestMode
@@ -166,13 +165,12 @@ Loop {
     Sleep, %Delay%
     FindImageAndClick(120, 500, 155, 530, , "Social", 143, 518, 1000, 30)
     FindImageAndClick(226, 100, 270, 135, , "Add", 38, 460, 500)
-    if(FindImageAndClick(170, 450, 195, 480, , "Approve", 228, 464)){
+    if(FindOrLoseImage(226, 100, 270, 135, , "Add", 0)) {
         now := A_NowUTC
-        IniWrite, %now%, %A_ScriptDir%\%scriptName%.ini, Metrics, LastApproveTimeUTC
         EnvSub, now, 1970, seconds
         IniWrite, %now%, %A_ScriptDir%\%scriptName%.ini, Metrics, LastApproveEpoch
     }
-
+    FindImageAndClick(170, 450, 195, 480, , "Approve", 228, 464)
     /* ; Deny all option
     if(firstRun) {
         Sleep, 1000
@@ -598,7 +596,8 @@ ExitApp
 return
 
 ShowStatusMessages:
-    ToggleStatusMessages()
+    ; ToggleStatusMessages()
+    Screenshot_dev()
 return
 
 ReloadScript:
@@ -1458,4 +1457,96 @@ UpdateButtonGUIPosition() {
     newY := y + Height - 4 + 2
 
     Gui, %ButtonGUIName%:Show, NoActivate x%newX% y%newY% w275 h30
+}
+
+Screenshot_dev(fileType := "Dev",subDir := "") {
+    global adbShell, adbPath, packs, winTitle
+    SetWorkingDir %A_ScriptDir%  ; Ensures the working directory is the script's directory
+
+    ; Define folder and file paths
+    fileDir := A_ScriptDir "\..\Screenshots"
+    if !FileExist(fileDir)
+        FileCreateDir, %fileDir%
+    if (subDir) {
+        fileDir .= "\" . subDir
+    }
+    if !FileExist(fileDir)
+        FileCreateDir, %fileDir%
+
+    ; File path for saving the screenshot locally
+    fileName := A_Now . "_" . winTitle . "_" . fileType . ".png"
+    filePath := fileDir "\" . fileName
+
+    pBitmapW := from_window(WinExist(winTitle))
+    Gdip_SaveBitmapToFile(pBitmapW, filePath)
+
+    sleep 100
+
+    try {
+        OwnerWND := WinExist(winTitle)
+        buttonWidth := 40
+
+        Gui, DevMode_ss%winTitle%:New, +LastFound -DPIScale
+        Gui, DevMode_ss%winTitle%:Add, Picture, x0 y0 w275 h534, %filePath%
+        Gui, DevMode_ss%winTitle%:Show, w275 h534, Screensho %winTitle%
+
+        sleep 100
+        msgbox click on top-left corner and bottom-right corners
+
+        KeyWait, LButton, D
+        MouseGetPos , X1, Y1, OutputVarWin, OutputVarControl
+        KeyWait, LButton, U
+        Y1 -= 31
+        ;MsgBox, The cursor is at X%X1% Y%Y1%.
+
+        KeyWait, LButton, D
+        MouseGetPos , X2, Y2, OutputVarWin, OutputVarControl
+        KeyWait, LButton, U
+        Y2 -= 31
+        ;MsgBox, The cursor is at X%X2% Y%Y2%.
+
+        W:=X2-X1
+        H:=Y2-Y1
+
+        pBitmap := Gdip_CloneBitmapArea(pBitmapW, X1, Y1, W, H)
+
+        InputBox, fileName, ,"Enter the name of the needle to save"
+
+        fileDir := A_ScriptDir . "\Scale125"
+        filePath := fileDir "\" . fileName . ".png"
+        Gdip_SaveBitmapToFile(pBitmap, filePath)
+
+        msgbox click on coordinate for adbClick
+
+        KeyWait, LButton, D
+        MouseGetPos , X3, Y3, OutputVarWin, OutputVarControl
+        KeyWait, LButton, U
+        Y3 -= 31
+
+        ; Convert window coordinates to device/OCR coordinates
+        ; Device resolution: 540x960, Window resolution: 277 x 489, Y offset: 49
+        OCR_X1 := Round(X1 * 540 / 277)
+        OCR_Y1 := Round((Y1 - 49) * 960 / 489)
+        OCR_W := Round(W * 540 / 277)
+        OCR_H := Round(H * 960 / 489)
+        OCR_X2 := OCR_X1 + OCR_W
+        OCR_Y2 := OCR_Y1 + OCR_H
+
+        ; Calculate center point of the box
+        OCR_X3 := Round(OCR_X1 + OCR_W / 2)
+        OCR_Y3 := Round(OCR_Y1 + OCR_H / 2)
+
+        MsgBox,
+        (LTrim
+            ctrl+C to copy:
+            FindOrLoseImage(%X1%, %Y1%, %X2%, %Y2%, , "%fileName%", 0, failSafeTime)
+            FindImageAndClick(%X1%, %Y1%, %X2%, %Y2%, , "%fileName%", %X3%, %Y3%, sleepTime)
+            adbClick_wbb(%X3%, %Y3%)
+            OCR coordinates: %OCR_X3%, %OCR_Y3%, %OCR_W%, %OCR_H%
+        )
+    }
+    catch {
+        msgbox Failed to create screenshot GUI
+    }
+    return filePath
 }
