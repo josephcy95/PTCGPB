@@ -220,8 +220,9 @@ Loop {
             doShutdown := false
             doRestart := false
 
-            msg := "Instance " . instanceNum . ": " . nonEmptyLines . " accounts >24h old, last end " . secondsSinceLastEnd . "s ago"
-            LogToFile(msg, "Monitor.txt")
+            ; Reduce logs
+            ; msg := "Instance " . instanceNum . ": " . nonEmptyLines . " accounts >24h old, last end " . secondsSinceLastEnd . "s ago"
+            ; LogToFile(msg, "Monitor.txt")
 
             if (nonEmptyLines = 0) {
                 ; No account left → safe to shut down (saves RAM/CPU)

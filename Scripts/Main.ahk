@@ -79,9 +79,6 @@ global MuMuv5
 MuMuv5 := isMuMuv5()
 
 ; Reset ini for monitoring
-now := A_NowUTC
-EnvSub, now, 1970, seconds
-IniWrite, %now%, %A_ScriptDir%\%scriptName%.ini, Metrics, LastApproveEpoch
 IniWrite, 0, %A_ScriptDir%\%scriptName%.ini, Metrics, InGPTestMode
 
 ; connect adb

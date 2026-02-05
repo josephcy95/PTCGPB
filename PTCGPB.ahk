@@ -2543,6 +2543,14 @@ StartBot() {
          }
          
          Run, %Command%
+
+         ; Reset Main.ini for monitoring ahk
+         metricFile := A_ScriptDir . "\Scripts\Main" . (A_Index > 1 ? A_Index : "") . ".ini"
+         now := A_NowUTC
+         EnvSub, now, 1970, seconds
+         IniWrite, %now%, %metricFile%, Metrics, LastApproveEpoch
+         IniWrite, 0, %metricFile%, Metrics, InGPTestMode
+
       }
    }
    
