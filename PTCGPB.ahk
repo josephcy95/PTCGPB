@@ -3,20 +3,20 @@
 DisplayPackStatus(Message, X := 0, Y := 625) {
    global SelectedMonitorIndex
    static GuiName := "ScreenPackStatus"
-   
+
    bgColor := "F0F5F9"
    textColor := "2E3440"
-   
+
    MaxRetries := 10
    RetryCount := 0
-   
+
    try {
       SelectedMonitorIndex := RegExReplace(SelectedMonitorIndex, ":.*$")
       SysGet, Monitor, Monitor, %SelectedMonitorIndex%
       X := MonitorLeft + X
-      
+
       Y := MonitorTop + 348
-      
+
       Gui %GuiName%:+LastFoundExist
       if (PackGuiBuild) {
          GuiControl, %GuiName%:, PackStatus, %Message%
@@ -40,36 +40,36 @@ DisplayPackStatus(Message, X := 0, Y := 625) {
 }
 
 ClearCardDetectionSettings() {
-    global FullArtCheck, TrainerCheck, RainbowCheck, PseudoGodPack
-    global CheckShinyPackOnly, InvalidCheck, CrownCheck, ShinyCheck, ImmersiveCheck
-    global minStars, minStarsShiny
-    
-    FullArtCheck := 0
-    TrainerCheck := 0
-    RainbowCheck := 0
-    PseudoGodPack := 0
-    CheckShinyPackOnly := 0  ; Always cleared
-    InvalidCheck := 0
-    CrownCheck := 0
-    ShinyCheck := 0
-    ImmersiveCheck := 0
-    minStars := 0
-    minStarsShiny := 0  ; Cleared along with minStars
-    
-    ; Update GUI controls if they exist
-    GuiControl,, FullArtCheck, 0
-    GuiControl,, TrainerCheck, 0
-    GuiControl,, RainbowCheck, 0
-    GuiControl,, PseudoGodPack, 0
-    GuiControl,, CheckShinyPackOnly, 0
-    GuiControl,, InvalidCheck, 0
-    GuiControl,, CrownCheck, 0
-    GuiControl,, ShinyCheck, 0
-    GuiControl,, ImmersiveCheck, 0
-    GuiControl,, minStars, 0
-    GuiControl,, minStarsShiny, 0
-    
-    UpdateCardDetectionButtonText()
+   global FullArtCheck, TrainerCheck, RainbowCheck, PseudoGodPack
+   global CheckShinyPackOnly, InvalidCheck, CrownCheck, ShinyCheck, ImmersiveCheck
+   global minStars, minStarsShiny
+
+   FullArtCheck := 0
+   TrainerCheck := 0
+   RainbowCheck := 0
+   PseudoGodPack := 0
+   CheckShinyPackOnly := 0 ; Always cleared
+   InvalidCheck := 0
+   CrownCheck := 0
+   ShinyCheck := 0
+   ImmersiveCheck := 0
+   minStars := 0
+   minStarsShiny := 0 ; Cleared along with minStars
+
+   ; Update GUI controls if they exist
+   GuiControl,, FullArtCheck, 0
+   GuiControl,, TrainerCheck, 0
+   GuiControl,, RainbowCheck, 0
+   GuiControl,, PseudoGodPack, 0
+   GuiControl,, CheckShinyPackOnly, 0
+   GuiControl,, InvalidCheck, 0
+   GuiControl,, CrownCheck, 0
+   GuiControl,, ShinyCheck, 0
+   GuiControl,, ImmersiveCheck, 0
+   GuiControl,, minStars, 0
+   GuiControl,, minStarsShiny, 0
+
+   UpdateCardDetectionButtonText()
 }
 
 #NoEnv
@@ -107,12 +107,12 @@ SetTitleMatchMode, 3
 OnError("ErrorHandler")
 
 githubUser := "josephcy95"
-   ,repoName := "PTCGPB"
-   ,localVersion := "v9.5.1"
-   ,scriptFolder := A_ScriptDir
-   ,zipPath := A_Temp . "\update.zip"
-   ,extractPath := A_Temp . "\update"
-   ,intro := "Fantastical Parade"
+,repoName := "PTCGPB"
+,localVersion := "v9.5.1"
+,scriptFolder := A_ScriptDir
+,zipPath := A_Temp . "\update.zip"
+,extractPath := A_Temp . "\update"
+,intro := "Fantastical Parade"
 
 global GUI_WIDTH := 790
 global GUI_HEIGHT := 370
@@ -121,8 +121,8 @@ global MuMuv5
 
 if not A_IsAdmin
 {
-    Run *RunAs "%A_ScriptFullPath%"
-    ExitApp
+   Run *RunAs "%A_ScriptFullPath%"
+   ExitApp
 }
 
 settingsLoaded := LoadSettingsFromIni()
@@ -138,10 +138,10 @@ if (!IsLanguageSet) {
    defaultChooseLang := 1
    if (BotLanguage != "") {
       Loop, Parse, BotLanguagelist, |
-         if (A_LoopField = BotLanguage) {
-            defaultChooseLang := A_Index
-            break
-         }
+      if (A_LoopField = BotLanguage) {
+         defaultChooseLang := A_Index
+         break
+      }
    }
    Gui, Add, DropDownList, vBotLanguage w200 choose%defaultChooseLang%, %BotLanguagelist%
    Gui, Add, Button, Default gNextStep, Next
@@ -159,11 +159,11 @@ NextStep:
    Gui, Destroy
    global LicenseDictionary, ProxyDictionary, currentDictionary, SetUpDictionary, HelpDictionary
    LicenseDictionary := CreateLicenseNoteLanguage(defaultBotLanguage)
-      ,ProxyDictionary := CreateProxyLanguage(defaultBotLanguage)
-      ,currentDictionary := CreateGUITextByLanguage(defaultBotLanguage, localVersion)
-      ,SetUpDictionary := CreateSetUpByLanguage(defaultBotLanguage)
-      ,HelpDictionary := CreateHelpByLanguage(defaultBotLanguage)
-   
+   ,ProxyDictionary := CreateProxyLanguage(defaultBotLanguage)
+   ,currentDictionary := CreateGUITextByLanguage(defaultBotLanguage, localVersion)
+   ,SetUpDictionary := CreateSetUpByLanguage(defaultBotLanguage)
+   ,HelpDictionary := CreateHelpByLanguage(defaultBotLanguage)
+
    RegRead, proxyEnabled, HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Internet Settings, ProxyEnable
    global saveSignalFile := A_ScriptDir "\Scripts\Include\save.signal"
    if (!debugMode && !shownLicense && !FileExist(saveSignalFile)) {
@@ -172,7 +172,7 @@ NextStep:
       if (proxyEnabled)
          MsgBox, 64,, % ProxyDictionary.Notice
    }
-   
+
    if FileExist(saveSignalFile) {
       KillADBProcesses()
       FileDelete, %saveSignalFile%
@@ -180,11 +180,11 @@ NextStep:
       KillADBProcesses()
       CheckForUpdate()
    }
-   
+
    scriptName := StrReplace(A_ScriptName, ".ahk")
    winTitle := scriptName
    showStatus := true
-   
+
    totalFile := A_ScriptDir . "\json\total.json"
    backupFile := A_ScriptDir . "\json\total-backup.json"
    if FileExist(totalFile) {
@@ -193,7 +193,7 @@ NextStep:
          MsgBox, 0x40000,, Failed to create %backupFile%. Ensure permissions and paths are correct.
       FileDelete, %totalFile%
    }
-   
+
    packsFile := A_ScriptDir . "\json\Packs.json"
    backupFile := A_ScriptDir . "\json\Packs-backup.json"
    if FileExist(packsFile) {
@@ -1510,7 +1510,6 @@ Save:
 
    SelectedMonitorIndex := GetMonitorIndexFromDeviceName(SelectedMonitorDeviceName)
 
-
   if (deleteMethod != "Inject Wonderpick 96P+") {
    s4tWP := false
    s4tWPMinCards := 1
@@ -1978,7 +1977,6 @@ IsNumeric(var) {
    return false
 }
 
-
 LoadSettingsFromIni() {
    global
    if (FileExist("Settings.ini")) {
@@ -2239,7 +2237,6 @@ CreateDefaultSettingsFile() {
    }
    return false
 }
-
 
 SaveAllSettings() {
    global IsLanguageSet, defaultBotLanguage, BotLanguage, currentfont, FontColor
@@ -3163,7 +3160,6 @@ VersionCompare(v1, v2) {
    return 0
 }
 
-
 ErrorHandler(exception) {
    errorMessage := "Error in PTCGPB.ahk`n`n"
       . "Message: " exception.Message "`n"
@@ -3210,5 +3206,4 @@ KillAllScripts() {
 
    Return
 }
-
 

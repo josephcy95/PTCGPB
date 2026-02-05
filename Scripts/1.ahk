@@ -28,8 +28,8 @@ IniRead, useAdbManager, %A_ScriptDir%\..\Settings.ini, UserSettings, useAdbManag
 
 ; We don't need this when using ADB Manager
 if(!useAdbManager) {
-	DllCall("AllocConsole")
-	WinHide % "ahk_id " DllCall("GetConsoleWindow", "ptr")
+    DllCall("AllocConsole")
+    WinHide % "ahk_id " DllCall("GetConsoleWindow", "ptr")
 }
 
 ; Register OnExit handler to clean up ADB shell properly when script exits
@@ -59,12 +59,12 @@ global verboseLogging
 global showcaseEnabled
 global currentPackIs6Card := false
 global currentPackIs4Card := false
-global injectSortMethod := "ModifiedAsc"  ; Default sort method (oldest accounts first)
-global injectMinPacks := 0       ; Minimum pack count for injection (0 = no minimum)
-global injectMaxPacks := 39      ; Maximum pack count for injection (default for regular Inject 13P+)
+global injectSortMethod := "ModifiedAsc" ; Default sort method (oldest accounts first)
+global injectMinPacks := 0 ; Minimum pack count for injection (0 = no minimum)
+global injectMaxPacks := 39 ; Maximum pack count for injection (default for regular Inject 13P+)
 
-global waitForEligibleAccounts := 1  ; Enable/disable waiting (1 = wait, 0 = stop script)
-global maxWaitHours := 24             ; Maximum hours to wait before giving up (0 = wait forever)
+global waitForEligibleAccounts := 1 ; Enable/disable waiting (1 = wait, 0 = stop script)
+global maxWaitHours := 24 ; Maximum hours to wait before giving up (0 = wait forever)
 
 avgtotalSeconds := 0
 
@@ -251,13 +251,13 @@ if(s4tEnabled){
 pokemonList := ["Mewtwo", "Charizard", "Pikachu", "Mew", "Dialga", "Palkia", "Arceus", "Shining", "Solgaleo", "Lunala", "Buzzwole", "Eevee", "HoOh", "Lugia", "Springs", "Deluxe", "MegaGyarados", "MegaBlaziken", "MegaAltaria", "CrimsonBlaze", "Parade"]
 shinyPacks := {"Shining": 1, "Solgaleo": 1, "Lunala": 1, "Buzzwole": 1, "Eevee": 1, "HoOh": 1, "Lugia": 1, "Springs": 1, "Deluxe": 1}
 
-packArray := []  ; Initialize an empty array
+packArray := [] ; Initialize an empty array
 
-Loop, % pokemonList.MaxIndex()  ; Loop through the array
+Loop, % pokemonList.MaxIndex() ; Loop through the array
 {
-    pokemon := pokemonList[A_Index]  ; Get the variable name as a string
-    if (%pokemon%)  ; Dereference the variable using %pokemon%
-        packArray.push(pokemon)  ; Add the name to packArray
+    pokemon := pokemonList[A_Index] ; Get the variable name as a string
+    if (%pokemon%) ; Dereference the variable using %pokemon%
+        packArray.push(pokemon) ; Add the name to packArray
 }
 
 changeDate := getChangeDateTime() ; get server reset time
@@ -265,7 +265,7 @@ changeDate := getChangeDateTime() ; get server reset time
 if(heartBeat)
     IniWrite, 1, %A_ScriptDir%\..\HeartBeat.ini, HeartBeat, Instance%scriptName%
 
-SetTimer, RefreshAccountLists, 3600000  ; Refresh Account list every hour
+SetTimer, RefreshAccountLists, 3600000 ; Refresh Account list every hour
 
 ; Set default rowGap if not defined
 if (!rowGap)
@@ -289,7 +289,7 @@ Sleep, 1000
 ConnectAdb(folderPath)
 
 if(useAdbManager) {
-	findOrLaunchAdbManager(adbManagerScriptPath)
+    findOrLaunchAdbManager(adbManagerScriptPath)
 }
 
 Sleep, 2000
@@ -306,7 +306,6 @@ CreateButtonGUI()
 
 ; refresh the gui button location
 SetTimer, UpdateButtonGUIPosition, 2000
-
 
 if (!godPack)
     godPack = 1
@@ -332,7 +331,7 @@ if(InStr(deleteMethod, "Inject"))
     injectMethod := true
 
 if(!useAdbManager) {
-	initializeAdbShell()
+    initializeAdbShell()
 }
 
 ; Clear game cache if claiming gift
@@ -1032,255 +1031,254 @@ ChooseTag() {
 		FindImageAndClick(53, 218, 63, 228, , "Badge", 143, 466, 500)
 	}
 }
-*/
+    */
 
-FindOrLoseImage(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT", EL := 1, safeTime := 0) {
-    global winTitle, failSafe
-    static lastStatusTime := 0
+    FindOrLoseImage(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT", EL := 1, safeTime := 0) {
+        global winTitle, failSafe
+        static lastStatusTime := 0
 
-    if(slowMotion) {
-        if(imageName = "speedmodMenu" || imageName = "One" || imageName = "Two" || imageName = "Three")
-            return true
-    }
-    if(searchVariation = "")
-        searchVariation := 20
-    imagePath := A_ScriptDir . "\" . defaultLanguage . "\"
-    confirmed := false
-
-    if(A_TickCount - lastStatusTime > 500) {
-        lastStatusTime := A_TickCount
-        CreateStatusMessage("Finding " . imageName . "...")
-    }
-
-    pBitmap := from_window(WinExist(winTitle))
-    Path = %imagePath%%imageName%.png
-    pNeedle := GetNeedle(Path)
-
-    ; ImageSearch within the region
-    vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, X1, Y1, X2, Y2, searchVariation)
-    if(EL = 0)
-        GDEL := 1
-    else
-        GDEL := 0
-    if (!confirmed && vRet = GDEL && GDEL = 1) {
-        confirmed := vPosXY
-    } else if(!confirmed && vRet = GDEL && GDEL = 0) {
-        confirmed := true
-    }
-
-    if (imageName = "Social" || imageName = "CommunityShowcase" || imageName = "Add" || imageName = "Search" || imageName = "inHamburgerMenu" || imageName = "Trade") {
-        Path = %imagePath%Tutorial.png
-        pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 111, 115, 167, 121, searchVariation)
-        if (vRet = 1) {
-            adbClick_wbb(145, 451)
+        if(slowMotion) {
+            if(imageName = "speedmodMenu" || imageName = "One" || imageName = "Two" || imageName = "Three")
+                return true
         }
-    }
+        if(searchVariation = "")
+            searchVariation := 20
+        imagePath := A_ScriptDir . "\" . defaultLanguage . "\"
+        confirmed := false
 
-    if (imageName = "Social") {
-        Path = %imagePath%MuMuFolder.png
-        pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 29, 145, 35, 151, searchVariation)
-        if (vRet = 1) {
-            restartGameInstance("Stuck at MuMuFolder...")
+        if(A_TickCount - lastStatusTime > 500) {
+            lastStatusTime := A_TickCount
+            CreateStatusMessage("Finding " . imageName . "...")
         }
-    }
 
-    if (imageName = "Pack") {
-        Path = %imagePath%PokeGoldPack2.png
+        pBitmap := from_window(WinExist(winTitle))
+        Path = %imagePath%%imageName%.png
         pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 75, 458, 83, 466, searchVariation)
-        if (vRet = 1) {
-            cantOpenMorePacks := 1
-            MarkAccountAsUsed()
-            loadedAccount := false
-            CreateStatusMessage("No more packs can be opened on this account. Restarting...")
-            Sleep, 1000
-            Reload
+
+        ; ImageSearch within the region
+        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, X1, Y1, X2, Y2, searchVariation)
+        if(EL = 0)
+            GDEL := 1
+        else
+            GDEL := 0
+        if (!confirmed && vRet = GDEL && GDEL = 1) {
+            confirmed := vPosXY
+        } else if(!confirmed && vRet = GDEL && GDEL = 0) {
+            confirmed := true
         }
-    }
+
+        if (imageName = "Social" || imageName = "CommunityShowcase" || imageName = "Add" || imageName = "Search" || imageName = "inHamburgerMenu" || imageName = "Trade") {
+            Path = %imagePath%Tutorial.png
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 111, 115, 167, 121, searchVariation)
+            if (vRet = 1) {
+                adbClick_wbb(145, 451)
+            }
+        }
+
+        if (imageName = "Social") {
+            Path = %imagePath%MuMuFolder.png
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 29, 145, 35, 151, searchVariation)
+            if (vRet = 1) {
+                restartGameInstance("Stuck at MuMuFolder...")
+            }
+        }
+
+        if (imageName = "Pack") {
+            Path = %imagePath%PokeGoldPack2.png
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 75, 458, 83, 466, searchVariation)
+            if (vRet = 1) {
+                cantOpenMorePacks := 1
+                MarkAccountAsUsed()
+                loadedAccount := false
+                CreateStatusMessage("No more packs can be opened on this account. Restarting...")
+                Sleep, 1000
+                Reload
+            }
+        }
 
         ; Search for new privacy and TOS clearing popup; can be removed later patch
-    if (imageName = "Points" || imageName = "Social" || imageName = "Country") {
-        Path = %imagePath%newPrivacyTOSpopup.png
-        pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 221, 394, 236, 407, searchVariation)
-        if (vRet = 1) {
-            CreateStatusMessage("Accepting Privacy and TOS popup.",,,, false)
-            Sleep, 3000
-            adbClick_wbb(142, 372)
-            adbClick_wbb(142, 372)
-            adbClick_wbb(198, 375) ; Failsafe if this is actually Data Download
-            Sleep, 2000
-            adbClick_wbb(140, 336) ; Privacy Notice
-            adbClick_wbb(140, 336) ; Privacy Notice
-            Sleep, 2000
-            adbClick_wbb(138, 487) ; Close Privacy Notice
-            adbClick_wbb(138, 487) ; Close Privacy Notice
-            Sleep, 1000
-            adbClick_wbb(47, 371) ; Agree to Privacy Notice
-            Sleep, 200
-            adbClick_wbb(143, 488) ; OK
-            Sleep, 500
-            adbClick_wbb(141, 371) ; OK
-            adbClick_wbb(141, 371) ; OK
-            Sleep, 2000
-            adbClick_wbb(140, 336) ; Terms of Use
-            adbClick_wbb(140, 336) ; Terms of Use
-            Sleep, 2000
-            adbClick_wbb(138, 487) ; Close Terms of Use
-            adbClick_wbb(138, 487) ; Close Terms of Use
-            Sleep, 1000
-            adbClick_wbb(47, 371) ; Agree to Privacy Notice
-            Sleep, 200
-            adbClick_wbb(143, 488) ; OK
-            Sleep, 500
-            Gdip_DisposeImage(pBitmap)
-            return confirmed
+        if (imageName = "Points" || imageName = "Social" || imageName = "Country") {
+            Path = %imagePath%newPrivacyTOSpopup.png
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 221, 394, 236, 407, searchVariation)
+            if (vRet = 1) {
+                CreateStatusMessage("Accepting Privacy and TOS popup.",,,, false)
+                Sleep, 3000
+                adbClick_wbb(142, 372)
+                adbClick_wbb(142, 372)
+                adbClick_wbb(198, 375) ; Failsafe if this is actually Data Download
+                Sleep, 2000
+                adbClick_wbb(140, 336) ; Privacy Notice
+                adbClick_wbb(140, 336) ; Privacy Notice
+                Sleep, 2000
+                adbClick_wbb(138, 487) ; Close Privacy Notice
+                adbClick_wbb(138, 487) ; Close Privacy Notice
+                Sleep, 1000
+                adbClick_wbb(47, 371) ; Agree to Privacy Notice
+                Sleep, 200
+                adbClick_wbb(143, 488) ; OK
+                Sleep, 500
+                adbClick_wbb(141, 371) ; OK
+                adbClick_wbb(141, 371) ; OK
+                Sleep, 2000
+                adbClick_wbb(140, 336) ; Terms of Use
+                adbClick_wbb(140, 336) ; Terms of Use
+                Sleep, 2000
+                adbClick_wbb(138, 487) ; Close Terms of Use
+                adbClick_wbb(138, 487) ; Close Terms of Use
+                Sleep, 1000
+                adbClick_wbb(47, 371) ; Agree to Privacy Notice
+                Sleep, 200
+                adbClick_wbb(143, 488) ; OK
+                Sleep, 500
+                Gdip_DisposeImage(pBitmap)
+                return confirmed
+            }
+
         }
 
-    }
-
-    if (imageName = "speedmodMenu" || imageName = "Points" || imageName = "Social" || imageName = "Country") {
-        Path = %imagePath%HardwareReqs.png
-        pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 29, 310, 36, 323, searchVariation)
-        if (vRet = 1) {
-            CreateStatusMessage("Clearing hardware requirements pop-up",,,, false)
-            Sleep, 3000
-            adbClick_wbb(199,370)
-            adbClick_wbb(199,370)
-            adbClick_wbb(199,370)
-            Sleep, 3000
-            Gdip_DisposeImage(pBitmap)
-            return confirmed
-        }
-    }
-
-    ; Handle 7/2025 trade news update popup, remove later patch
-    if(imageName = "Points" || imageName = "Social" || imageName = "Shop" || imageName = "Missions" || imageName = "WonderPick" || imageName = "Home" || imageName = "Country" || imageName = "Account2" || imageName = "Account" || imageName = "ClaimAll" || imageName = "inHamburgerMenu" || imageName = "Trade") {
-        Path = %imagePath%Privacy.png ; this is just the "X" button on several pop-up menus
-        pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 130, 477, 148, 494, searchVariation)
-        if (vRet = 1) {
-            adbClick_wbb(137, 485)
-            Gdip_DisposeImage(pBitmap)
-            return confirmed
+        if (imageName = "speedmodMenu" || imageName = "Points" || imageName = "Social" || imageName = "Country") {
+            Path = %imagePath%HardwareReqs.png
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 29, 310, 36, 323, searchVariation)
+            if (vRet = 1) {
+                CreateStatusMessage("Clearing hardware requirements pop-up",,,, false)
+                Sleep, 3000
+                adbClick_wbb(199,370)
+                adbClick_wbb(199,370)
+                adbClick_wbb(199,370)
+                Sleep, 3000
+                Gdip_DisposeImage(pBitmap)
+                return confirmed
+            }
         }
 
-        ; display boards
-        Path = %imagePath%FeatureUnlocked1.png
-        pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 125, 208, 155, 228, searchVariation)
-        if (vRet = 1) {
-            adbInputEvent("111") ; ESC
-            Gdip_DisposeImage(pBitmap)
-            return confirmed
+        ; Handle 7/2025 trade news update popup, remove later patch
+        if(imageName = "Points" || imageName = "Social" || imageName = "Shop" || imageName = "Missions" || imageName = "WonderPick" || imageName = "Home" || imageName = "Country" || imageName = "Account2" || imageName = "Account" || imageName = "ClaimAll" || imageName = "inHamburgerMenu" || imageName = "Trade") {
+            Path = %imagePath%Privacy.png ; this is just the "X" button on several pop-up menus
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 130, 477, 148, 494, searchVariation)
+            if (vRet = 1) {
+                adbClick_wbb(137, 485)
+                Gdip_DisposeImage(pBitmap)
+                return confirmed
+            }
+
+            ; display boards
+            Path = %imagePath%FeatureUnlocked1.png
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 125, 208, 155, 228, searchVariation)
+            if (vRet = 1) {
+                adbInputEvent("111") ; ESC
+                Gdip_DisposeImage(pBitmap)
+                return confirmed
+            }
+
+            ; Trades unlocked
+            Path = %imagePath%FeatureUnlocked1.png
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 125, 203, 155, 217, searchVariation)
+            if (vRet = 1) {
+                adbInputEvent("111") ; ESC
+                Gdip_DisposeImage(pBitmap)
+                return confirmed
+            }
+
+            ; trying to check for other feature unlocks
+            Path = %imagePath%FeatureUnlocked1.png
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 125, 190, 155, 238, searchVariation)
+            if (vRet = 1) {
+                adbInputEvent("111") ; ESC
+                Gdip_DisposeImage(pBitmap)
+                return confirmed
+            }
+
+            ; Try to handle "Share" feature
+            Path = %imagePath%Share.png
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 61, 273, 74, 286, searchVariation)
+            if (vRet = 1) {
+                adbClick_wbb(141, 369)
+                Gdip_DisposeImage(pBitmap)
+                return confirmed
+            }
+
+            ; another option to look for "share" 'x' button, different position per language? unclear.
+            Path = %imagePath%Privacy.png ; this is just the "X" button on several pop-up menus
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 130, 359, 148, 379, searchVariation)
+            if (vRet = 1) {
+                adbInputEvent("111") ; ESC
+                Gdip_DisposeImage(pBitmap)
+                return confirmed
+            }
+
+            Path = %imagePath%Update.png
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 15, 180, 53, 228, searchVariation)
+            if (vRet = 1) {
+                adbClick_wbb(137, 485)
+                Gdip_DisposeImage(pBitmap)
+                return confirmed
+            }
         }
 
-        ; Trades unlocked
-        Path = %imagePath%FeatureUnlocked1.png
-        pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 125, 203, 155, 217, searchVariation)
-        if (vRet = 1) {
-            adbInputEvent("111") ; ESC
-            Gdip_DisposeImage(pBitmap)
-            return confirmed
-        }
-
-        ; trying to check for other feature unlocks
-        Path = %imagePath%FeatureUnlocked1.png
-        pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 125, 190, 155, 238, searchVariation)
-        if (vRet = 1) {
-            adbInputEvent("111") ; ESC
-            Gdip_DisposeImage(pBitmap)
-            return confirmed
-        }
-
-        ; Try to handle "Share" feature
-        Path = %imagePath%Share.png
-        pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 61, 273, 74, 286, searchVariation)
-        if (vRet = 1) {
-            adbClick_wbb(141, 369)
-            Gdip_DisposeImage(pBitmap)
-            return confirmed
-        }
-
-        ; another option to look for "share" 'x' button, different position per language? unclear.
-        Path = %imagePath%Privacy.png ; this is just the "X" button on several pop-up menus
-        pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 130, 359, 148, 379, searchVariation)
-        if (vRet = 1) {
-            adbInputEvent("111") ; ESC
-            Gdip_DisposeImage(pBitmap)
-            return confirmed
-        }
-
-        Path = %imagePath%Update.png
-        pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 15, 180, 53, 228, searchVariation)
-        if (vRet = 1) {
-            adbClick_wbb(137, 485)
-            Gdip_DisposeImage(pBitmap)
-            return confirmed
-        }
-    }
-
-
-    Path = %imagePath%App.png
-    pNeedle := GetNeedle(Path)
-    ; ImageSearch within the region
-    vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 45, 174, 55, 185, searchVariation)
-    if (vRet = 1) {
-        restartGameInstance("Stuck at " . imageName . "...")
-    }
-
-    if(imageName = "Missions") { ; may input extra ESC and stuck at exit game
-        Path = %imagePath%Delete2.png
+        Path = %imagePath%App.png
         pNeedle := GetNeedle(Path)
         ; ImageSearch within the region
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 118, 353, 135, 390, searchVariation)
+        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 45, 174, 55, 185, searchVariation)
         if (vRet = 1) {
-            adbClick_wbb(74, 353)
-            Delay(1)
+            restartGameInstance("Stuck at " . imageName . "...")
         }
-    }
 
-    if(imageName = "Social" || imageName = "Shop" || imageName = "Home" || imageName = "Add" || imageName = "Add2" || imageName = "requests") {
-        TradeTutorial()
-    }
-    if(imageName = "CommunityShowcase") {
-        TradeTutorialForShowcase()
-    }
-    Path = %imagePath%NoResponse.png
-    pNeedle := GetNeedle(Path)
-    ; ImageSearch within the region
-    vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 38, 281, 57, 308, searchVariation)
-    if (vRet = 1) {
-        CreateStatusMessage("No response in " . scriptName . ". Clicking retry...",,,, false)
-        adbClick_wbb(46, 299)
-        Sleep, 1000
-    }
-    Path = %imagePath%NoResponseDark.png
-    pNeedle := GetNeedle(Path)
-    ; ImageSearch within the region
-    vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 38, 281, 57, 308, searchVariation)
-    if (vRet = 1) {
-        CreateStatusMessage("No response in " . scriptName . ". Clicking retry...",,,, false)
-        adbClick_wbb(46, 299)
-        Sleep, 1000
-    }
-    if(imageName = "Social" || imageName = "Country" || imageName = "Account2" || imageName = "Account" || imageName = "Points") { ;only look for deleted account on start up.
-        Path = %imagePath%NoSave.png ; look for No Save Data error message > if loaded account > delete xml > reload
+        if(imageName = "Missions") { ; may input extra ESC and stuck at exit game
+            Path = %imagePath%Delete2.png
+            pNeedle := GetNeedle(Path)
+            ; ImageSearch within the region
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 118, 353, 135, 390, searchVariation)
+            if (vRet = 1) {
+                adbClick_wbb(74, 353)
+                Delay(1)
+            }
+        }
+
+        if(imageName = "Social" || imageName = "Shop" || imageName = "Home" || imageName = "Add" || imageName = "Add2" || imageName = "requests") {
+            TradeTutorial()
+        }
+        if(imageName = "CommunityShowcase") {
+            TradeTutorialForShowcase()
+        }
+        Path = %imagePath%NoResponse.png
         pNeedle := GetNeedle(Path)
         ; ImageSearch within the region
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 30, 331, 50, 449, searchVariation)
-        if (scaleParam = 287) {
-            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 30, 325, 55, 445, searchVariation)
-        }
+        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 38, 281, 57, 308, searchVariation)
         if (vRet = 1) {
+            CreateStatusMessage("No response in " . scriptName . ". Clicking retry...",,,, false)
+            adbClick_wbb(46, 299)
+            Sleep, 1000
+        }
+        Path = %imagePath%NoResponseDark.png
+        pNeedle := GetNeedle(Path)
+        ; ImageSearch within the region
+        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 38, 281, 57, 308, searchVariation)
+        if (vRet = 1) {
+            CreateStatusMessage("No response in " . scriptName . ". Clicking retry...",,,, false)
+            adbClick_wbb(46, 299)
+            Sleep, 1000
+        }
+        if(imageName = "Social" || imageName = "Country" || imageName = "Account2" || imageName = "Account" || imageName = "Points") { ;only look for deleted account on start up.
+            Path = %imagePath%NoSave.png ; look for No Save Data error message > if loaded account > delete xml > reload
+            pNeedle := GetNeedle(Path)
+            ; ImageSearch within the region
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 30, 331, 50, 449, searchVariation)
+            if (scaleParam = 287) {
+                vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 30, 325, 55, 445, searchVariation)
+            }
+            if (vRet = 1) {
             adbWriteRaw("rm -rf /data/data/jp.pokemon.pokemontcgp/cache/*") ; clear cache
             waitadb()
             CreateStatusMessage("Loaded deleted account. Deleting XML...",,,, false)
@@ -1387,7 +1385,6 @@ FindImageAndClick(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT",
                 restartGameInstance("Stuck at " . imageName . "...") ; change to reset the instance and delete data then reload script
             }
         }
-
 
         if (imageName = "Social" || imageName = "CommunityShowcase" || imageName = "Add" || imageName = "Search") {
             Path = %imagePath%Tutorial.png
@@ -2157,705 +2154,705 @@ accountFoundGP() {
 
 	FileSetTime, accountFileTime, %accountFile%
 }
-*/
+                */
 
-; MODIFIED TrackUsedAccount function with better timestamp tracking
+                ; MODIFIED TrackUsedAccount function with better timestamp tracking
 
-; NEW function to clean up stale used accounts
+                ; NEW function to clean up stale used accounts
 
-ControlClick(X, Y) {
-    global winTitle
-    ControlClick, x%X% y%Y%, %winTitle%
-}
+                ControlClick(X, Y) {
+                    global winTitle
+                    ControlClick, x%X% y%Y%, %winTitle%
+                }
 
-Screenshot_dev(fileType := "Dev",subDir := "") {
-    global adbShell, adbPath, packs, winTitle
-    SetWorkingDir %A_ScriptDir%  ; Ensures the working directory is the script's directory
+                Screenshot_dev(fileType := "Dev",subDir := "") {
+                    global adbShell, adbPath, packs, winTitle
+                    SetWorkingDir %A_ScriptDir% ; Ensures the working directory is the script's directory
 
-    ; Define folder and file paths
-    fileDir := A_ScriptDir "\..\Screenshots"
-    if !FileExist(fileDir)
-        FileCreateDir, %fileDir%
-    if (subDir) {
-        fileDir .= "\" . subDir
-    }
-    if !FileExist(fileDir)
-        FileCreateDir, %fileDir%
+                    ; Define folder and file paths
+                    fileDir := A_ScriptDir "\..\Screenshots"
+                    if !FileExist(fileDir)
+                        FileCreateDir, %fileDir%
+                    if (subDir) {
+                        fileDir .= "\" . subDir
+                    }
+                    if !FileExist(fileDir)
+                        FileCreateDir, %fileDir%
 
-    ; File path for saving the screenshot locally
-    fileName := A_Now . "_" . winTitle . "_" . fileType . ".png"
-    filePath := fileDir "\" . fileName
+                    ; File path for saving the screenshot locally
+                    fileName := A_Now . "_" . winTitle . "_" . fileType . ".png"
+                    filePath := fileDir "\" . fileName
 
-    pBitmapW := from_window(WinExist(winTitle))
-    Gdip_SaveBitmapToFile(pBitmapW, filePath)
+                    pBitmapW := from_window(WinExist(winTitle))
+                    Gdip_SaveBitmapToFile(pBitmapW, filePath)
 
-    sleep 100
+                    sleep 100
 
-    try {
-        OwnerWND := WinExist(winTitle)
-        buttonWidth := 40
+                    try {
+                        OwnerWND := WinExist(winTitle)
+                        buttonWidth := 40
 
-        Gui, DevMode_ss%winTitle%:New, +LastFound -DPIScale
-        Gui, DevMode_ss%winTitle%:Add, Picture, x0 y0 w275 h534, %filePath%
-        Gui, DevMode_ss%winTitle%:Show, w275 h534, Screensho %winTitle%
+                        Gui, DevMode_ss%winTitle%:New, +LastFound -DPIScale
+                        Gui, DevMode_ss%winTitle%:Add, Picture, x0 y0 w275 h534, %filePath%
+                        Gui, DevMode_ss%winTitle%:Show, w275 h534, Screensho %winTitle%
 
-        sleep 100
-        msgbox click on top-left corner and bottom-right corners
+                        sleep 100
+                        msgbox click on top-left corner and bottom-right corners
 
-        KeyWait, LButton, D
-        MouseGetPos , X1, Y1, OutputVarWin, OutputVarControl
-        KeyWait, LButton, U
-        Y1 -= 31
-        ;MsgBox, The cursor is at X%X1% Y%Y1%.
+                        KeyWait, LButton, D
+                        MouseGetPos , X1, Y1, OutputVarWin, OutputVarControl
+                        KeyWait, LButton, U
+                        Y1 -= 31
+                        ;MsgBox, The cursor is at X%X1% Y%Y1%.
 
-        KeyWait, LButton, D
-        MouseGetPos , X2, Y2, OutputVarWin, OutputVarControl
-        KeyWait, LButton, U
-        Y2 -= 31
-        ;MsgBox, The cursor is at X%X2% Y%Y2%.
+                        KeyWait, LButton, D
+                        MouseGetPos , X2, Y2, OutputVarWin, OutputVarControl
+                        KeyWait, LButton, U
+                        Y2 -= 31
+                        ;MsgBox, The cursor is at X%X2% Y%Y2%.
 
-        W:=X2-X1
-        H:=Y2-Y1
+                        W:=X2-X1
+                        H:=Y2-Y1
 
-        pBitmap := Gdip_CloneBitmapArea(pBitmapW, X1, Y1, W, H)
+                        pBitmap := Gdip_CloneBitmapArea(pBitmapW, X1, Y1, W, H)
 
-        InputBox, fileName, ,"Enter the name of the needle to save"
+                        InputBox, fileName, ,"Enter the name of the needle to save"
 
-        fileDir := A_ScriptDir . "\Scale125"
-        filePath := fileDir "\" . fileName . ".png"
-        Gdip_SaveBitmapToFile(pBitmap, filePath)
+                        fileDir := A_ScriptDir . "\Scale125"
+                        filePath := fileDir "\" . fileName . ".png"
+                        Gdip_SaveBitmapToFile(pBitmap, filePath)
 
-        msgbox click on coordinate for adbClick
+                        msgbox click on coordinate for adbClick
 
-        KeyWait, LButton, D
-        MouseGetPos , X3, Y3, OutputVarWin, OutputVarControl
-        KeyWait, LButton, U
-        Y3 -= 31
+                        KeyWait, LButton, D
+                        MouseGetPos , X3, Y3, OutputVarWin, OutputVarControl
+                        KeyWait, LButton, U
+                        Y3 -= 31
 
-        ; Convert window coordinates to device/OCR coordinates
-        ; Device resolution: 540x960, Window resolution: 277x489, Y offset: 44
-        OCR_X1 := Round(X1 * 540 / 277)
-        OCR_Y1 := Round((Y1 - 44) * 960 / 489)
-        OCR_W := Round(W * 540 / 277)
-        OCR_H := Round(H * 960 / 489)
-        OCR_X2 := OCR_X1 + OCR_W
-        OCR_Y2 := OCR_Y1 + OCR_H
+                        ; Convert window coordinates to device/OCR coordinates
+                        ; Device resolution: 540x960, Window resolution: 277x489, Y offset: 44
+                        OCR_X1 := Round(X1 * 540 / 277)
+                        OCR_Y1 := Round((Y1 - 44) * 960 / 489)
+                        OCR_W := Round(W * 540 / 277)
+                        OCR_H := Round(H * 960 / 489)
+                        OCR_X2 := OCR_X1 + OCR_W
+                        OCR_Y2 := OCR_Y1 + OCR_H
 
-        ; Calculate center point of the box
-        OCR_X3 := Round(OCR_X1 + OCR_W / 2)
-        OCR_Y3 := Round(OCR_Y1 + OCR_H / 2)
+                        ; Calculate center point of the box
+                        OCR_X3 := Round(OCR_X1 + OCR_W / 2)
+                        OCR_Y3 := Round(OCR_Y1 + OCR_H / 2)
 
-        MsgBox,
-        (LTrim
-            ctrl+C to copy:
-            FindOrLoseImage(%X1%, %Y1%, %X2%, %Y2%, , "%fileName%", 0, failSafeTime)
-            FindImageAndClick(%X1%, %Y1%, %X2%, %Y2%, , "%fileName%", %X3%, %outY3%, sleepTime)
-            adbClick_wbb(%X3%, %outY3%)
-            OCR coordinates: %OCR_X3%, %OCR_Y3%, %OCR_W%, %OCR_H%
-        )
-    }
-    catch {
-        msgbox Failed to create screenshot GUI
-    }
-    return filePath
-}
+                        MsgBox,
+                        (LTrim
+                        ctrl+C to copy:
+                            FindOrLoseImage(%X1%, %Y1%, %X2%, %Y2%, , "%fileName%", 0, failSafeTime)
+                            FindImageAndClick(%X1%, %Y1%, %X2%, %Y2%, , "%fileName%", %X3%, %outY3%, sleepTime)
+                            adbClick_wbb(%X3%, %outY3%)
+                            OCR coordinates: %OCR_X3%, %OCR_Y3%, %OCR_W%, %OCR_H%
+                            )
+                        }
+                        catch {
+                            msgbox Failed to create screenshot GUI
+                        }
+                        return filePath
+                    }
 
-Screenshot(fileType := "Valid", subDir := "", ByRef fileName := "") {
-    global adbShell, adbPath, packs
-    SetWorkingDir %A_ScriptDir%  ; Ensures the working directory is the script's directory
+                    Screenshot(fileType := "Valid", subDir := "", ByRef fileName := "") {
+                        global adbShell, adbPath, packs
+                        SetWorkingDir %A_ScriptDir% ; Ensures the working directory is the script's directory
 
-    ; Define folder and file paths
-    fileDir := A_ScriptDir "\..\Screenshots"
-    if !FileExist(fileDir)
-        FileCreateDir, %fileDir%
-    if (subDir) {
-        fileDir .= "\" . subDir
-        if !FileExist(fileDir)
-            FileCreateDir, %fileDir%
-    }
-    if (filename = "PACKSTATS") {
-        fileDir .= "\temp"
-        if !FileExist(fileDir)
-            FileCreateDir, %fileDir%
-    }
+                        ; Define folder and file paths
+                        fileDir := A_ScriptDir "\..\Screenshots"
+                        if !FileExist(fileDir)
+                            FileCreateDir, %fileDir%
+                        if (subDir) {
+                            fileDir .= "\" . subDir
+                            if !FileExist(fileDir)
+                                FileCreateDir, %fileDir%
+                        }
+                        if (filename = "PACKSTATS") {
+                            fileDir .= "\temp"
+                            if !FileExist(fileDir)
+                                FileCreateDir, %fileDir%
+                        }
 
-    ; File path for saving the screenshot locally
-    fileName := A_Now . "_" . winTitle . "_" . fileType . "_" . packsInPool . "_packs.png"
-    if (filename = "PACKSTATS")
-        fileName := "packstats_temp.png"
-    filePath := fileDir "\" . fileName
+                        ; File path for saving the screenshot locally
+                        fileName := A_Now . "_" . winTitle . "_" . fileType . "_" . packsInPool . "_packs.png"
+                        if (filename = "PACKSTATS")
+                            fileName := "packstats_temp.png"
+                        filePath := fileDir "\" . fileName
 
-    global titleHeight
-    yBias := titleHeight - 45
-    pBitmapW := from_window(WinExist(winTitle))
-    pBitmap := Gdip_CloneBitmapArea(pBitmapW, 18, 175+yBias, 240, 227)
+                        global titleHeight
+                        yBias := titleHeight - 45
+                        pBitmapW := from_window(WinExist(winTitle))
+                        pBitmap := Gdip_CloneBitmapArea(pBitmapW, 18, 175+yBias, 240, 227)
 
-    ;scale 100%
-    if (scaleParam = 287) {
-        pBitmap := Gdip_CloneBitmapArea(pBitmapW, 17, 168, 245, 230)
-    }
-    Gdip_DisposeImage(pBitmapW)
-    Gdip_SaveBitmapToFile(pBitmap, filePath)
+                        ;scale 100%
+                        if (scaleParam = 287) {
+                            pBitmap := Gdip_CloneBitmapArea(pBitmapW, 17, 168, 245, 230)
+                        }
+                        Gdip_DisposeImage(pBitmapW)
+                        Gdip_SaveBitmapToFile(pBitmap, filePath)
 
-    ; Don't dispose pBitmap if it's a PACKSTATS screenshot
-    if (filename != "PACKSTATS") {
-        Gdip_DisposeImage(pBitmap)
-        return filePath
-    }
+                        ; Don't dispose pBitmap if it's a PACKSTATS screenshot
+                        if (filename != "PACKSTATS") {
+                            Gdip_DisposeImage(pBitmap)
+                        return filePath
+                    }
 
-    ; For PACKSTATS, return both values and delete temp file after OCR is done
-    return {filepath: filePath, bitmap: pBitmap, deleteAfterUse: true}
-}
+                    ; For PACKSTATS, return both values and delete temp file after OCR is done
+                    return {filepath: filePath, bitmap: pBitmap, deleteAfterUse: true}
+                }
 
-; Pause Script
-PauseScript:
-    CreateStatusMessage("Pausing...",,,, false)
-    Pause, On
-return
+                ; Pause Script
+                PauseScript:
+                    CreateStatusMessage("Pausing...",,,, false)
+                    Pause, On
+                return
 
-; Resume Script
-ResumeScript:
-    CreateStatusMessage("Resuming...",,,, false)
-    StartSkipTime := A_TickCount ;reset stuck timers
-    failSafe := A_TickCount
-    Pause, Off
-return
+                ; Resume Script
+                ResumeScript:
+                    CreateStatusMessage("Resuming...",,,, false)
+                    StartSkipTime := A_TickCount ;reset stuck timers
+                    failSafe := A_TickCount
+                    Pause, Off
+                return
 
-; Stop Script
-StopScript:
-    ToggleStop()
-return
+                ; Stop Script
+                StopScript:
+                    ToggleStop()
+                return
 
-DevMode:
-    ToggleDevMode()
-return
+                DevMode:
+                    ToggleDevMode()
+                return
 
-ShowStatusMessages:
-    ToggleStatusMessages()
-return
+                ShowStatusMessages:
+                    ToggleStatusMessages()
+                return
 
-ReloadScript:
-    Reload
-return
+                ReloadScript:
+                    Reload
+                return
 
-TestScript:
-    ToggleTestScript()
-return
+                TestScript:
+                    ToggleTestScript()
+                return
 
-; ToggleStop - For GUI button clicks (stops only THIS instance)
-ToggleStop() {
-    global stopToggle, friended, stopDictionary, winTitle
+                ; ToggleStop - For GUI button clicks (stops only THIS instance)
+                ToggleStop() {
+                    global stopToggle, friended, stopDictionary, winTitle
 
-    ; Check if user has a saved preference for single instance stop
-    settingsPath := A_ScriptDir . "\..\Settings.ini"
-    IniRead, savedStopPreferenceSingle, %settingsPath%, UserSettings, stopPreferenceSingle, none
+                    ; Check if user has a saved preference for single instance stop
+                    settingsPath := A_ScriptDir . "\..\Settings.ini"
+                    IniRead, savedStopPreferenceSingle, %settingsPath%, UserSettings, stopPreferenceSingle, none
 
-    if (savedStopPreferenceSingle != "none" && savedStopPreferenceSingle != "ERROR" && savedStopPreferenceSingle != "") {
-        ; Execute the saved preference directly without showing popup
-        if (savedStopPreferenceSingle = "immediate") {
-            ExitApp
-        } else if (savedStopPreferenceSingle = "wait_end") {
+                    if (savedStopPreferenceSingle != "none" && savedStopPreferenceSingle != "ERROR" && savedStopPreferenceSingle != "") {
+                        ; Execute the saved preference directly without showing popup
+                        if (savedStopPreferenceSingle = "immediate") {
+                            ExitApp
+                        } else if (savedStopPreferenceSingle = "wait_end") {
+                            stopToggle := true
+                            if (!friended)
+                                ExitApp
+                            else
+                                CreateStatusMessage("Stopping script at the end of the run...",,,, false)
+                        }
+                        return
+                    }
+
+                    ; Get localized strings
+                    title := stopDictionary["stop_confirm_title"]
+                    btnImmediate := stopDictionary["stop_immediately"]
+                    btnWaitEnd := stopDictionary["stop_wait_end"]
+                    chkRemember := stopDictionary["stop_remember_preference"]
+
+                    ; Create confirmation GUI with checkbox
+                    Gui, StopConfirm:New, +AlwaysOnTop +Owner
+                    Gui, StopConfirm:Add, Text, x20 y15 w260 Center, % title
+                    Gui, StopConfirm:Add, Button, x20 y45 w130 h30 gStopImmediatelySingle, % btnImmediate
+                    Gui, StopConfirm:Add, Button, x160 y45 w130 h30 gStopWaitEndSingle, % btnWaitEnd
+                    Gui, StopConfirm:Add, Checkbox, x20 y85 w260 vRememberStopPreferenceSingle, % chkRemember
+                    Gui, StopConfirm:Show, w310 h115, % title
+                return
+            }
+
+            ; ToggleStopAll - For Shift+F7 hotkey (stops ALL instances, only called from instance 1)
+            ToggleStopAll() {
+                global stopDictionary
+
+                ; Check if user has a saved preference
+                settingsPath := A_ScriptDir . "\..\Settings.ini"
+                IniRead, savedStopPreference, %settingsPath%, UserSettings, stopPreference, none
+
+                if (savedStopPreference != "none" && savedStopPreference != "ERROR" && savedStopPreference != "") {
+                    ; Execute the saved preference directly without showing popup
+                    if (savedStopPreference = "immediate") {
+                        StopAllInstances()
+                    } else if (savedStopPreference = "wait_end") {
+                        global stopToggle
+                        SignalStopAfterRun()
+                        stopToggle := true
+                        CreateStatusMessage("Stopping script at the end of the run...",,,, false)
+                    } else if (savedStopPreference = "kill_mumu") {
+                        global Instances
+                        Loop, %Instances% {
+                            killInstance(A_Index)
+                            Sleep, 500
+                        }
+                        Sleep, 1000
+                        StopAllInstances()
+                    }
+                return
+            }
+
+            ; Get localized strings
+            title := stopDictionary["stop_confirm_title"]
+            btnImmediate := stopDictionary["stop_immediately"]
+            btnWaitEnd := stopDictionary["stop_wait_end"]
+            btnKillMumu := stopDictionary["stop_kill_mumu"]
+            chkRemember := stopDictionary["stop_remember_preference"]
+
+            ; Create confirmation GUI with checkbox
+            Gui, StopConfirmAll:New, +AlwaysOnTop +Owner
+            Gui, StopConfirmAll:Add, Text, x20 y15 w400 Center, % title
+            Gui, StopConfirmAll:Add, Button, x20 y45 w130 h30 gStopImmediatelyAll, % btnImmediate
+            Gui, StopConfirmAll:Add, Button, x160 y45 w130 h30 gStopWaitEndAll, % btnWaitEnd
+            Gui, StopConfirmAll:Add, Button, x300 y45 w130 h30 gStopAndKillMuMuAll, % btnKillMumu
+            Gui, StopConfirmAll:Add, Checkbox, x20 y85 w400 vRememberStopPreference, % chkRemember
+            Gui, StopConfirmAll:Show, w450 h115, % title
+            return
+        }
+
+        ; === Single instance stop handlers (GUI button) ===
+        StopImmediatelySingle:
+            Gui, StopConfirm:Submit, NoHide
+            if (RememberStopPreferenceSingle) {
+                settingsPath := A_ScriptDir . "\..\Settings.ini"
+                IniWrite, immediate, %settingsPath%, UserSettings, stopPreferenceSingle
+            }
+            Gui, StopConfirm:Destroy
+        ExitApp
+        return
+
+        StopWaitEndSingle:
+            global stopToggle, friended
+            Gui, StopConfirm:Submit, NoHide
+            if (RememberStopPreferenceSingle) {
+                settingsPath := A_ScriptDir . "\..\Settings.ini"
+                IniWrite, wait_end, %settingsPath%, UserSettings, stopPreferenceSingle
+            }
+            Gui, StopConfirm:Destroy
             stopToggle := true
             if (!friended)
                 ExitApp
             else
                 CreateStatusMessage("Stopping script at the end of the run...",,,, false)
-        }
         return
-    }
 
-    ; Get localized strings
-    title := stopDictionary["stop_confirm_title"]
-    btnImmediate := stopDictionary["stop_immediately"]
-    btnWaitEnd := stopDictionary["stop_wait_end"]
-    chkRemember := stopDictionary["stop_remember_preference"]
+        StopConfirmGuiClose:
+        StopConfirmGuiEscape:
+            Gui, StopConfirm:Destroy
+        return
 
-    ; Create confirmation GUI with checkbox
-    Gui, StopConfirm:New, +AlwaysOnTop +Owner
-    Gui, StopConfirm:Add, Text, x20 y15 w260 Center, % title
-    Gui, StopConfirm:Add, Button, x20 y45 w130 h30 gStopImmediatelySingle, % btnImmediate
-    Gui, StopConfirm:Add, Button, x160 y45 w130 h30 gStopWaitEndSingle, % btnWaitEnd
-    Gui, StopConfirm:Add, Checkbox, x20 y85 w260 vRememberStopPreferenceSingle, % chkRemember
-    Gui, StopConfirm:Show, w310 h115, % title
-    return
-}
-
-; ToggleStopAll - For Shift+F7 hotkey (stops ALL instances, only called from instance 1)
-ToggleStopAll() {
-    global stopDictionary
-
-    ; Check if user has a saved preference
-    settingsPath := A_ScriptDir . "\..\Settings.ini"
-    IniRead, savedStopPreference, %settingsPath%, UserSettings, stopPreference, none
-
-    if (savedStopPreference != "none" && savedStopPreference != "ERROR" && savedStopPreference != "") {
-        ; Execute the saved preference directly without showing popup
-        if (savedStopPreference = "immediate") {
+        ; === All instances stop handlers (Shift+F7 from instance 1) ===
+        StopImmediatelyAll:
+            global RememberStopPreference
+            Gui, StopConfirmAll:Submit, NoHide
+            if (RememberStopPreference) {
+                settingsPath := A_ScriptDir . "\..\Settings.ini"
+                IniWrite, immediate, %settingsPath%, UserSettings, stopPreference
+            }
+            Gui, StopConfirmAll:Destroy
             StopAllInstances()
-        } else if (savedStopPreference = "wait_end") {
-            global stopToggle
+        return
+
+        StopWaitEndAll:
+            global stopToggle, RememberStopPreference
+            Gui, StopConfirmAll:Submit, NoHide
+            if (RememberStopPreference) {
+                settingsPath := A_ScriptDir . "\..\Settings.ini"
+                IniWrite, wait_end, %settingsPath%, UserSettings, stopPreference
+            }
+            Gui, StopConfirmAll:Destroy
+            ; Signal all other instances to stop after their current run
             SignalStopAfterRun()
             stopToggle := true
             CreateStatusMessage("Stopping script at the end of the run...",,,, false)
-        } else if (savedStopPreference = "kill_mumu") {
-            global Instances
+        return
+
+        StopAndKillMuMuAll:
+            global Instances, RememberStopPreference
+            Gui, StopConfirmAll:Submit, NoHide
+            if (RememberStopPreference) {
+                settingsPath := A_ScriptDir . "\..\Settings.ini"
+                IniWrite, kill_mumu, %settingsPath%, UserSettings, stopPreference
+            }
+            Gui, StopConfirmAll:Destroy
+            ; Kill ALL MuMu instances before calling StopAllInstances (which does ExitApp)
             Loop, %Instances% {
                 killInstance(A_Index)
                 Sleep, 500
             }
             Sleep, 1000
             StopAllInstances()
-        }
         return
-    }
 
-    ; Get localized strings
-    title := stopDictionary["stop_confirm_title"]
-    btnImmediate := stopDictionary["stop_immediately"]
-    btnWaitEnd := stopDictionary["stop_wait_end"]
-    btnKillMumu := stopDictionary["stop_kill_mumu"]
-    chkRemember := stopDictionary["stop_remember_preference"]
+        StopConfirmAllGuiClose:
+        StopConfirmAllGuiEscape:
+            Gui, StopConfirmAll:Destroy
+        return
 
-    ; Create confirmation GUI with checkbox
-    Gui, StopConfirmAll:New, +AlwaysOnTop +Owner
-    Gui, StopConfirmAll:Add, Text, x20 y15 w400 Center, % title
-    Gui, StopConfirmAll:Add, Button, x20 y45 w130 h30 gStopImmediatelyAll, % btnImmediate
-    Gui, StopConfirmAll:Add, Button, x160 y45 w130 h30 gStopWaitEndAll, % btnWaitEnd
-    Gui, StopConfirmAll:Add, Button, x300 y45 w130 h30 gStopAndKillMuMuAll, % btnKillMumu
-    Gui, StopConfirmAll:Add, Checkbox, x20 y85 w400 vRememberStopPreference, % chkRemember
-    Gui, StopConfirmAll:Show, w450 h115, % title
-    return
-}
+        ; Kill all script instances immediately
+        StopAllInstances() {
+            global Instances
 
-; === Single instance stop handlers (GUI button) ===
-StopImmediatelySingle:
-    Gui, StopConfirm:Submit, NoHide
-    if (RememberStopPreferenceSingle) {
-        settingsPath := A_ScriptDir . "\..\Settings.ini"
-        IniWrite, immediate, %settingsPath%, UserSettings, stopPreferenceSingle
-    }
-    Gui, StopConfirm:Destroy
-    ExitApp
-return
+            DetectHiddenWindows, On
+            SetTitleMatchMode, 2 ; Match if title CONTAINS the string (needed for full paths)
 
-StopWaitEndSingle:
-    global stopToggle, friended
-    Gui, StopConfirm:Submit, NoHide
-    if (RememberStopPreferenceSingle) {
-        settingsPath := A_ScriptDir . "\..\Settings.ini"
-        IniWrite, wait_end, %settingsPath%, UserSettings, stopPreferenceSingle
-    }
-    Gui, StopConfirm:Destroy
-    stopToggle := true
-    if (!friended)
+            ; Close Main.ahk first
+            WinClose, Main.ahk ahk_class AutoHotkey
+
+            ; Close all numbered instances (2 through Instances, skip 1 which is us)
+            Loop, %Instances% {
+                if (A_Index != 1) {
+                    WinClose, % A_Index ".ahk ahk_class AutoHotkey"
+                }
+            }
+
+            ; Finally exit this instance
         ExitApp
-    else
+    }
+
+    ; Cleanup function called when script exits - ensures ADB shell is properly closed
+    ; DISABLED - was causing Reload delays due to blocking ADB shell communication
+    ; CleanupOnExit(ExitReason, ExitCode) {
+    ;     global adbShell
+    ;
+    ;     ; Close ADB shell if it exists to prevent hanging connections
+    ;     try {
+    ;         if (IsObject(adbShell) && adbShell.Status = 0) {
+    ;             adbShell.StdIn.WriteLine("exit")
+    ;             Sleep, 100
+    ;             adbShell.Terminate()
+    ;         }
+    ;     }
+    ;     adbShell := ""
+    ;
+    ;     return 0  ; Allow exit to proceed
+    ; }
+
+    ; Message handler for "stop after run" signal from instance 1
+    OnStopAfterRunMessage(wParam, lParam, msg, hwnd) {
+        global stopToggle
+        stopToggle := true
         CreateStatusMessage("Stopping script at the end of the run...",,,, false)
-return
-
-StopConfirmGuiClose:
-StopConfirmGuiEscape:
-    Gui, StopConfirm:Destroy
-return
-
-; === All instances stop handlers (Shift+F7 from instance 1) ===
-StopImmediatelyAll:
-    global RememberStopPreference
-    Gui, StopConfirmAll:Submit, NoHide
-    if (RememberStopPreference) {
-        settingsPath := A_ScriptDir . "\..\Settings.ini"
-        IniWrite, immediate, %settingsPath%, UserSettings, stopPreference
-    }
-    Gui, StopConfirmAll:Destroy
-    StopAllInstances()
-return
-
-StopWaitEndAll:
-    global stopToggle, RememberStopPreference
-    Gui, StopConfirmAll:Submit, NoHide
-    if (RememberStopPreference) {
-        settingsPath := A_ScriptDir . "\..\Settings.ini"
-        IniWrite, wait_end, %settingsPath%, UserSettings, stopPreference
-    }
-    Gui, StopConfirmAll:Destroy
-    ; Signal all other instances to stop after their current run
-    SignalStopAfterRun()
-    stopToggle := true
-    CreateStatusMessage("Stopping script at the end of the run...",,,, false)
-return
-
-StopAndKillMuMuAll:
-    global Instances, RememberStopPreference
-    Gui, StopConfirmAll:Submit, NoHide
-    if (RememberStopPreference) {
-        settingsPath := A_ScriptDir . "\..\Settings.ini"
-        IniWrite, kill_mumu, %settingsPath%, UserSettings, stopPreference
-    }
-    Gui, StopConfirmAll:Destroy
-    ; Kill ALL MuMu instances before calling StopAllInstances (which does ExitApp)
-    Loop, %Instances% {
-        killInstance(A_Index)
-        Sleep, 500
-    }
-    Sleep, 1000
-    StopAllInstances()
-return
-
-StopConfirmAllGuiClose:
-StopConfirmAllGuiEscape:
-    Gui, StopConfirmAll:Destroy
-return
-
-; Kill all script instances immediately
-StopAllInstances() {
-    global Instances
-
-    DetectHiddenWindows, On
-    SetTitleMatchMode, 2  ; Match if title CONTAINS the string (needed for full paths)
-
-    ; Close Main.ahk first
-    WinClose, Main.ahk ahk_class AutoHotkey
-
-    ; Close all numbered instances (2 through Instances, skip 1 which is us)
-    Loop, %Instances% {
-        if (A_Index != 1) {
-            WinClose, % A_Index ".ahk ahk_class AutoHotkey"
-        }
+        return 0
     }
 
-    ; Finally exit this instance
-    ExitApp
-}
+    ; Send "stop after run" message to all other script instances
+    SignalStopAfterRun() {
+        global Instances
 
-; Cleanup function called when script exits - ensures ADB shell is properly closed
-; DISABLED - was causing Reload delays due to blocking ADB shell communication
-; CleanupOnExit(ExitReason, ExitCode) {
-;     global adbShell
-;
-;     ; Close ADB shell if it exists to prevent hanging connections
-;     try {
-;         if (IsObject(adbShell) && adbShell.Status = 0) {
-;             adbShell.StdIn.WriteLine("exit")
-;             Sleep, 100
-;             adbShell.Terminate()
-;         }
-;     }
-;     adbShell := ""
-;
-;     return 0  ; Allow exit to proceed
-; }
+        DetectHiddenWindows, On
+        SetTitleMatchMode, 2
 
-; Message handler for "stop after run" signal from instance 1
-OnStopAfterRunMessage(wParam, lParam, msg, hwnd) {
-    global stopToggle
-    stopToggle := true
-    CreateStatusMessage("Stopping script at the end of the run...",,,, false)
-    return 0
-}
-
-; Send "stop after run" message to all other script instances
-SignalStopAfterRun() {
-    global Instances
-
-    DetectHiddenWindows, On
-    SetTitleMatchMode, 2
-
-    ; Send message to all numbered instances (2 through Instances)
-    Loop, %Instances% {
-        if (A_Index != 1) {
-            ; Find the window for this instance
-            WinGet, targetHwnd, ID, % A_Index ".ahk ahk_class AutoHotkey"
-            if (targetHwnd) {
-                ; Send custom message (0x500) to signal "stop after run"
-                PostMessage, 0x500, 0, 0,, ahk_id %targetHwnd%
+        ; Send message to all numbered instances (2 through Instances)
+        Loop, %Instances% {
+            if (A_Index != 1) {
+                ; Find the window for this instance
+                WinGet, targetHwnd, ID, % A_Index ".ahk ahk_class AutoHotkey"
+                if (targetHwnd) {
+                    ; Send custom message (0x500) to signal "stop after run"
+                    PostMessage, 0x500, 0, 0,, ahk_id %targetHwnd%
+                }
             }
         }
     }
-}
 
-ToggleTestScript() {
-    global GPTest
-    if(!GPTest) {
-        CreateStatusMessage("In GP Test Mode",,,, false)
-        GPTest := true
+    ToggleTestScript() {
+        global GPTest
+        if(!GPTest) {
+            CreateStatusMessage("In GP Test Mode",,,, false)
+            GPTest := true
+        }
+        else {
+            CreateStatusMessage("Exiting GP Test Mode",,,, false)
+            ;Winset, Alwaysontop, On, %winTitle%
+            GPTest := false
+        }
     }
-    else {
-        CreateStatusMessage("Exiting GP Test Mode",,,, false)
-        ;Winset, Alwaysontop, On, %winTitle%
-        GPTest := false
-    }
-}
 
-; Function to append a time and variable pair to the JSON file
+    ; Function to append a time and variable pair to the JSON file
 
-from_window(ByRef image) {
-    ; Thanks tic - https://www.autohotkey.com/boards/viewtopic.php?t=6517
+    from_window(ByRef image) {
+        ; Thanks tic - https://www.autohotkey.com/boards/viewtopic.php?t=6517
 
-    ; Get the handle to the window.
-    image := (hwnd := WinExist(image)) ? hwnd : image
+        ; Get the handle to the window.
+        image := (hwnd := WinExist(image)) ? hwnd : image
 
-    ; Restore the window if minimized! Must be visible for capture.
-    if DllCall("IsIconic", "ptr", image)
-        DllCall("ShowWindow", "ptr", image, "int", 4)
+        ; Restore the window if minimized! Must be visible for capture.
+        if DllCall("IsIconic", "ptr", image)
+            DllCall("ShowWindow", "ptr", image, "int", 4)
 
-    ; Get the width and height of the client window.
-    VarSetCapacity(Rect, 16) ; sizeof(RECT) = 16
-    DllCall("GetClientRect", "ptr", image, "ptr", &Rect)
-        , width  := NumGet(Rect, 8, "int")
+        ; Get the width and height of the client window.
+        VarSetCapacity(Rect, 16) ; sizeof(RECT) = 16
+        DllCall("GetClientRect", "ptr", image, "ptr", &Rect)
+        , width := NumGet(Rect, 8, "int")
         , height := NumGet(Rect, 12, "int")
 
-    ; struct BITMAPINFOHEADER - https://docs.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader
-    hdc := DllCall("CreateCompatibleDC", "ptr", 0, "ptr")
-    VarSetCapacity(bi, 40, 0)                ; sizeof(bi) = 40
-        , NumPut(       40, bi,  0,   "uint") ; Size
-        , NumPut(    width, bi,  4,   "uint") ; Width
-        , NumPut(  -height, bi,  8,    "int") ; Height - Negative so (0, 0) is top-left.
-        , NumPut(        1, bi, 12, "ushort") ; Planes
-        , NumPut(       32, bi, 14, "ushort") ; BitCount / BitsPerPixel
-        , NumPut(        0, bi, 16,   "uint") ; Compression = BI_RGB
-        , NumPut(        3, bi, 20,   "uint") ; Quality setting (3 = low quality, no anti-aliasing)
-    hbm := DllCall("CreateDIBSection", "ptr", hdc, "ptr", &bi, "uint", 0, "ptr*", pBits:=0, "ptr", 0, "uint", 0, "ptr")
-    obm := DllCall("SelectObject", "ptr", hdc, "ptr", hbm, "ptr")
+        ; struct BITMAPINFOHEADER - https://docs.microsoft.com/en-us/windows/win32/api/wingdi/ns-wingdi-bitmapinfoheader
+        hdc := DllCall("CreateCompatibleDC", "ptr", 0, "ptr")
+        VarSetCapacity(bi, 40, 0) ; sizeof(bi) = 40
+        , NumPut( 40, bi, 0, "uint") ; Size
+        , NumPut( width, bi, 4, "uint") ; Width
+        , NumPut( -height, bi, 8, "int") ; Height - Negative so (0, 0) is top-left.
+        , NumPut( 1, bi, 12, "ushort") ; Planes
+        , NumPut( 32, bi, 14, "ushort") ; BitCount / BitsPerPixel
+        , NumPut( 0, bi, 16, "uint") ; Compression = BI_RGB
+        , NumPut( 3, bi, 20, "uint") ; Quality setting (3 = low quality, no anti-aliasing)
+        hbm := DllCall("CreateDIBSection", "ptr", hdc, "ptr", &bi, "uint", 0, "ptr*", pBits:=0, "ptr", 0, "uint", 0, "ptr")
+        obm := DllCall("SelectObject", "ptr", hdc, "ptr", hbm, "ptr")
 
-    ; Print the window onto the hBitmap using an undocumented flag. https://stackoverflow.com/a/40042587
-    DllCall("PrintWindow", "ptr", image, "ptr", hdc, "uint", 0x3) ; PW_CLIENTONLY | PW_RENDERFULLCONTENT
-    ; Additional info on how this is implemented: https://www.reddit.com/r/windows/comments/8ffr56/altprintscreen/
+        ; Print the window onto the hBitmap using an undocumented flag. https://stackoverflow.com/a/40042587
+        DllCall("PrintWindow", "ptr", image, "ptr", hdc, "uint", 0x3) ; PW_CLIENTONLY | PW_RENDERFULLCONTENT
+        ; Additional info on how this is implemented: https://www.reddit.com/r/windows/comments/8ffr56/altprintscreen/
 
-    ; Convert the hBitmap to a Bitmap using a built in function as there is no transparency.
-    DllCall("gdiplus\GdipCreateBitmapFromHBITMAP", "ptr", hbm, "ptr", 0, "ptr*", pBitmap:=0)
+        ; Convert the hBitmap to a Bitmap using a built in function as there is no transparency.
+        DllCall("gdiplus\GdipCreateBitmapFromHBITMAP", "ptr", hbm, "ptr", 0, "ptr*", pBitmap:=0)
 
-    ; Cleanup the hBitmap and device contexts.
-    DllCall("SelectObject", "ptr", hdc, "ptr", obm)
-    DllCall("DeleteObject", "ptr", hbm)
-    DllCall("DeleteDC",     "ptr", hdc)
+        ; Cleanup the hBitmap and device contexts.
+        DllCall("SelectObject", "ptr", hdc, "ptr", obm)
+        DllCall("DeleteObject", "ptr", hbm)
+        DllCall("DeleteDC", "ptr", hdc)
 
-    return pBitmap
-}
-
-; ===== TIMER FUNCTIONS =====
-RefreshAccountLists:
-    createAccountList(scriptName)
-Return
-
-CleanupUsedAccountsTimer:
-    CleanupUsedAccounts()
-Return
-
-; ===== HOTKEYS =====
-~+F5::Reload
-~+F6::Pause
-~+F7::
-    ; Only instance 1 handles Shift+F7 - shows popup and controls all instances
-    ; Other instances do nothing here; they receive commands via PostMessage from instance 1
-    if (scriptName = "1") {
-        ToggleStopAll()
-    }
-return
-~+F8::ToggleDevMode()
-;~+F8::ToggleStatusMessages()
-;~F9::restartGameInstance("F9")
-
-ToggleDevMode() {
-
-    try {
-        OwnerWND := WinExist(winTitle)
-        x4 := x + 5
-        y4 := y + 44
-        buttonWidth := 40
-
-        Gui, DevMode%winTitle%:New, +LastFound
-        Gui, DevMode%winTitle%:Font, s5 cGray Norm Bold, Segoe UI  ; Normal font for input labels
-        Gui, DevMode%winTitle%:Add, Button, % "x" . (buttonWidth * 0) . " y0 w" . buttonWidth . " h25 gbboxScript", bound box
-
-        Gui, DevMode%winTitle%:Add, Button, % "x" . (buttonWidth * 1) . " y0 w" . buttonWidth . " h25 gbboxNpauseScript", bbox pause
-
-        Gui, DevMode%winTitle%:Add, Button, % "x" . (buttonWidth * 2) . " y0 w" . buttonWidth . " h25 gscreenshotscript", screen grab
-
-        Gui, DevMode%winTitle%:Show, w250 h100, Dev Mode %winTitle%
-
-    }
-    catch {
-        CreateStatusMessage("Failed to create button GUI.",,,, false)
-    }
-}
-
-screenshotscript:
-    Screenshot_dev()
-return
-
-bboxScript:
-    ToggleBBox()
-return
-
-ToggleBBox() {
-    dbg_bbox := !dbg_bbox
-}
-
-bboxNpauseScript:
-    TogglebboxNpause()
-return
-
-TogglebboxNpause() {
-    dbg_bboxNpause := !dbg_bboxNpause
-}
-
-dbg_bbox :=0
-dbg_bboxNpause :=0
-dbg_bbox_click :=0
-
-ToggleStatusMessages() {
-    if(showStatus) {
-        showStatus := False
-    }
-    else
-        showStatus := True
-}
-
-bboxDraw(X1, Y1, X2, Y2, color) {
-    WinGetPos, xwin, ywin, Width, Height, %winTitle%
-    BoxWidth := X2-X1
-    BoxHeight := Y2-Y1
-    ; Create a GUI
-    Gui, BoundingBox%winTitle%:+AlwaysOnTop +ToolWindow -Caption +E0x20
-    Gui, BoundingBox%winTitle%:Color, 123456
-    Gui, BoundingBox%winTitle%:+LastFound  ; Make the GUI window the last found window for use by the line below. (straght from documentation)
-    WinSet, TransColor, 123456 ; Makes that specific color transparent in the gui
-
-    ; Create the borders and show
-    Gui, BoundingBox%winTitle%:Add, Progress, x0 y0 w%BoxWidth% h2 %color%
-    Gui, BoundingBox%winTitle%:Add, Progress, x0 y0 w2 h%BoxHeight% %color%
-    Gui, BoundingBox%winTitle%:Add, Progress, x%BoxWidth% y0 w2 h%BoxHeight% %color%
-    Gui, BoundingBox%winTitle%:Add, Progress, x0 y%BoxHeight% w%BoxWidth% h2 %color%
-
-    xshow := X1+xwin
-    yshow := Y1+ywin
-    Gui, BoundingBox%winTitle%:Show, x%xshow% y%yshow% NoActivate
-    Sleep, 100
-
-}
-
-bboxDraw2(X1, Y1, X2, Y2, color) {
-    WinGetPos, xwin, ywin, Width, Height, %winTitle%
-    BoxWidth := 10
-    BoxHeight := 10
-    Xm1:=X1-(BoxWidth/2)
-    Xm2:=X2-(BoxWidth/2)
-    Ym1:=Y1-(BoxWidth/2)
-    Ym2:=Y2-(BoxWidth/2)
-    Xh1:=Xm1+BoxWidth
-    Xh2:=Xm2+BoxWidth
-    Yh1:=Ym1+BoxHeight
-    Yh2:=Ym2+BoxHeight
-
-    ; Create a GUI
-    Gui, BoundingBox%winTitle%:+AlwaysOnTop +ToolWindow -Caption +E0x20
-    Gui, BoundingBox%winTitle%:Color, 123456
-    Gui, BoundingBox%winTitle%:+LastFound  ; Make the GUI window the last found window for use by the line below. (straght from documentation)
-    WinSet, TransColor, 123456 ; Makes that specific color transparent in the gui
-
-    ; Create the borders and show
-    Gui, BoundingBox%winTitle%:Add, Progress, x%Xm1% y%Ym1% w%BoxWidth% h2 %color%
-    Gui, BoundingBox%winTitle%:Add, Progress, x%Xm1% y%Ym1% w2 h%BoxHeight% %color%
-    Gui, BoundingBox%winTitle%:Add, Progress, x%Xh1% y%Ym1% w2 h%BoxHeight% %color%
-    Gui, BoundingBox%winTitle%:Add, Progress, x%Xm1% y%Yh1% w%BoxWidth% h2 %color%
-
-    ; Create the borders and show
-    Gui, BoundingBox%winTitle%:Add, Progress, x%Xm2% y%Ym2% w%BoxWidth% h2 %color%
-    Gui, BoundingBox%winTitle%:Add, Progress, x%Xm2% y%Ym2% w2 h%BoxHeight% %color%
-    Gui, BoundingBox%winTitle%:Add, Progress, x%Xh2% y%Ym2% w2 h%BoxHeight% %color%
-    Gui, BoundingBox%winTitle%:Add, Progress, x%Xm2% y%Yh2% w%BoxWidth% h2 %color%
-
-    xshow := xwin
-    yshow := ywin
-    Gui, BoundingBox%winTitle%:Show, x%xshow% y%yshow% NoActivate
-    Sleep, 100
-
-}
-
-adbSwipe_wbb(params) {
-    if(dbg_bbox)
-        bboxAndPause_swipe(params, dbg_bboxNpause)
-    adbSwipe(params)
-}
-
-bboxAndPause_swipe(params, doPause := False) {
-    paramsplit := StrSplit(params , " ")
-    X1:=round(paramsplit[1] / 535 * 277)
-    Y1:=round((paramsplit[2] / 960 * 489) + 49)
-    X2:=round(paramsplit[3] / 535 * 277)
-    Y2:=round((paramsplit[4] / 960 * 489) + 49)
-    speed:=paramsplit[5]
-    CreateStatusMessage("Swiping (" . X1 . "," . Y1 . ") to (" . X2 . "," . Y2 . ") speed " . speed,,,, false)
-
-    color := "BackgroundYellow"
-
-    ;bboxDraw2(X1, Y1, X2, Y2, color)
-
-    bboxDraw(X1-5, Y1-5, X1+5, Y1+5, color)
-    if (doPause) {
-        Pause
-    }
-    Gui, BoundingBox%winTitle%:Destroy
-
-    bboxDraw(X2-5, Y2-5, X2+5, Y2+5, color)
-    if (doPause) {
-        Pause
-    }
-    Gui, BoundingBox%winTitle%:Destroy
-}
-
-adbClick_wbb(X,Y)  {
-    if(dbg_bbox)
-        bboxAndPause_click(X, Y, dbg_bboxNpause)
-    adbClick(X,Y)
-}
-
-bboxAndPause_click(X, Y, doPause := False) {
-    CreateStatusMessage("Clicking X " . X . " Y " . Y,,,, false)
-
-    color := "BackgroundBlue"
-
-    bboxDraw(X-5, Y-5, X+5, Y+5, color)
-
-    if (doPause) {
-        Pause
+        return pBitmap
     }
 
-    if GetKeyState("F4", "P") {
-        Pause
+    ; ===== TIMER FUNCTIONS =====
+    RefreshAccountLists:
+        createAccountList(scriptName)
+    Return
+
+    CleanupUsedAccountsTimer:
+        CleanupUsedAccounts()
+    Return
+
+    ; ===== HOTKEYS =====
+    ~+F5::Reload
+    ~+F6::Pause
+    ~+F7::
+        ; Only instance 1 handles Shift+F7 - shows popup and controls all instances
+        ; Other instances do nothing here; they receive commands via PostMessage from instance 1
+        if (scriptName = "1") {
+            ToggleStopAll()
+        }
+    return
+    ~+F8::ToggleDevMode()
+    ;~+F8::ToggleStatusMessages()
+    ;~F9::restartGameInstance("F9")
+
+    ToggleDevMode() {
+
+        try {
+            OwnerWND := WinExist(winTitle)
+            x4 := x + 5
+            y4 := y + 44
+            buttonWidth := 40
+
+            Gui, DevMode%winTitle%:New, +LastFound
+            Gui, DevMode%winTitle%:Font, s5 cGray Norm Bold, Segoe UI ; Normal font for input labels
+            Gui, DevMode%winTitle%:Add, Button, % "x" . (buttonWidth * 0) . " y0 w" . buttonWidth . " h25 gbboxScript", bound box
+
+            Gui, DevMode%winTitle%:Add, Button, % "x" . (buttonWidth * 1) . " y0 w" . buttonWidth . " h25 gbboxNpauseScript", bbox pause
+
+            Gui, DevMode%winTitle%:Add, Button, % "x" . (buttonWidth * 2) . " y0 w" . buttonWidth . " h25 gscreenshotscript", screen grab
+
+            Gui, DevMode%winTitle%:Show, w250 h100, Dev Mode %winTitle%
+
+        }
+        catch {
+            CreateStatusMessage("Failed to create button GUI.",,,, false)
+        }
     }
-    Gui, BoundingBox%winTitle%:Destroy
-}
 
-bboxAndPause_immage(X1, Y1, X2, Y2, pNeedleObj, vret := False, doPause := False) {
-    CreateStatusMessage("Searching " . pNeedleObj.Name . " returns " . vret,,,, false)
+    screenshotscript:
+        Screenshot_dev()
+    return
 
-    if(vret>0) {
-        color := "BackgroundGreen"
-    } else {
-        color := "BackgroundRed"
+    bboxScript:
+        ToggleBBox()
+    return
+
+    ToggleBBox() {
+        dbg_bbox := !dbg_bbox
     }
 
-    bboxDraw(X1, Y1, X2, Y2, color)
+    bboxNpauseScript:
+        TogglebboxNpause()
+    return
 
-    if (doPause && vret) {
-        Pause
+    TogglebboxNpause() {
+        dbg_bboxNpause := !dbg_bboxNpause
     }
 
-    if GetKeyState("F4", "P") {
-        Pause
-    }
-    Gui, BoundingBox%winTitle%:Destroy
-}
+    dbg_bbox :=0
+    dbg_bboxNpause :=0
+    dbg_bbox_click :=0
 
-Gdip_ImageSearch_wbb(pBitmapHaystack,pNeedle,ByRef OutputList=""
+    ToggleStatusMessages() {
+        if(showStatus) {
+            showStatus := False
+        }
+        else
+            showStatus := True
+    }
+
+    bboxDraw(X1, Y1, X2, Y2, color) {
+        WinGetPos, xwin, ywin, Width, Height, %winTitle%
+        BoxWidth := X2-X1
+        BoxHeight := Y2-Y1
+        ; Create a GUI
+        Gui, BoundingBox%winTitle%:+AlwaysOnTop +ToolWindow -Caption +E0x20
+        Gui, BoundingBox%winTitle%:Color, 123456
+        Gui, BoundingBox%winTitle%:+LastFound ; Make the GUI window the last found window for use by the line below. (straght from documentation)
+        WinSet, TransColor, 123456 ; Makes that specific color transparent in the gui
+
+        ; Create the borders and show
+        Gui, BoundingBox%winTitle%:Add, Progress, x0 y0 w%BoxWidth% h2 %color%
+        Gui, BoundingBox%winTitle%:Add, Progress, x0 y0 w2 h%BoxHeight% %color%
+        Gui, BoundingBox%winTitle%:Add, Progress, x%BoxWidth% y0 w2 h%BoxHeight% %color%
+        Gui, BoundingBox%winTitle%:Add, Progress, x0 y%BoxHeight% w%BoxWidth% h2 %color%
+
+        xshow := X1+xwin
+        yshow := Y1+ywin
+        Gui, BoundingBox%winTitle%:Show, x%xshow% y%yshow% NoActivate
+        Sleep, 100
+
+    }
+
+    bboxDraw2(X1, Y1, X2, Y2, color) {
+        WinGetPos, xwin, ywin, Width, Height, %winTitle%
+        BoxWidth := 10
+        BoxHeight := 10
+        Xm1:=X1-(BoxWidth/2)
+        Xm2:=X2-(BoxWidth/2)
+        Ym1:=Y1-(BoxWidth/2)
+        Ym2:=Y2-(BoxWidth/2)
+        Xh1:=Xm1+BoxWidth
+        Xh2:=Xm2+BoxWidth
+        Yh1:=Ym1+BoxHeight
+        Yh2:=Ym2+BoxHeight
+
+        ; Create a GUI
+        Gui, BoundingBox%winTitle%:+AlwaysOnTop +ToolWindow -Caption +E0x20
+        Gui, BoundingBox%winTitle%:Color, 123456
+        Gui, BoundingBox%winTitle%:+LastFound ; Make the GUI window the last found window for use by the line below. (straght from documentation)
+        WinSet, TransColor, 123456 ; Makes that specific color transparent in the gui
+
+        ; Create the borders and show
+        Gui, BoundingBox%winTitle%:Add, Progress, x%Xm1% y%Ym1% w%BoxWidth% h2 %color%
+        Gui, BoundingBox%winTitle%:Add, Progress, x%Xm1% y%Ym1% w2 h%BoxHeight% %color%
+        Gui, BoundingBox%winTitle%:Add, Progress, x%Xh1% y%Ym1% w2 h%BoxHeight% %color%
+        Gui, BoundingBox%winTitle%:Add, Progress, x%Xm1% y%Yh1% w%BoxWidth% h2 %color%
+
+        ; Create the borders and show
+        Gui, BoundingBox%winTitle%:Add, Progress, x%Xm2% y%Ym2% w%BoxWidth% h2 %color%
+        Gui, BoundingBox%winTitle%:Add, Progress, x%Xm2% y%Ym2% w2 h%BoxHeight% %color%
+        Gui, BoundingBox%winTitle%:Add, Progress, x%Xh2% y%Ym2% w2 h%BoxHeight% %color%
+        Gui, BoundingBox%winTitle%:Add, Progress, x%Xm2% y%Yh2% w%BoxWidth% h2 %color%
+
+        xshow := xwin
+        yshow := ywin
+        Gui, BoundingBox%winTitle%:Show, x%xshow% y%yshow% NoActivate
+        Sleep, 100
+
+    }
+
+    adbSwipe_wbb(params) {
+        if(dbg_bbox)
+            bboxAndPause_swipe(params, dbg_bboxNpause)
+        adbSwipe(params)
+    }
+
+    bboxAndPause_swipe(params, doPause := False) {
+        paramsplit := StrSplit(params , " ")
+        X1:=round(paramsplit[1] / 535 * 277)
+        Y1:=round((paramsplit[2] / 960 * 489) + 49)
+        X2:=round(paramsplit[3] / 535 * 277)
+        Y2:=round((paramsplit[4] / 960 * 489) + 49)
+        speed:=paramsplit[5]
+        CreateStatusMessage("Swiping (" . X1 . "," . Y1 . ") to (" . X2 . "," . Y2 . ") speed " . speed,,,, false)
+
+        color := "BackgroundYellow"
+
+        ;bboxDraw2(X1, Y1, X2, Y2, color)
+
+        bboxDraw(X1-5, Y1-5, X1+5, Y1+5, color)
+        if (doPause) {
+            Pause
+        }
+        Gui, BoundingBox%winTitle%:Destroy
+
+        bboxDraw(X2-5, Y2-5, X2+5, Y2+5, color)
+        if (doPause) {
+            Pause
+        }
+        Gui, BoundingBox%winTitle%:Destroy
+    }
+
+    adbClick_wbb(X,Y) {
+        if(dbg_bbox)
+            bboxAndPause_click(X, Y, dbg_bboxNpause)
+        adbClick(X,Y)
+    }
+
+    bboxAndPause_click(X, Y, doPause := False) {
+        CreateStatusMessage("Clicking X " . X . " Y " . Y,,,, false)
+
+        color := "BackgroundBlue"
+
+        bboxDraw(X-5, Y-5, X+5, Y+5, color)
+
+        if (doPause) {
+            Pause
+        }
+
+        if GetKeyState("F4", "P") {
+            Pause
+        }
+        Gui, BoundingBox%winTitle%:Destroy
+    }
+
+    bboxAndPause_immage(X1, Y1, X2, Y2, pNeedleObj, vret := False, doPause := False) {
+        CreateStatusMessage("Searching " . pNeedleObj.Name . " returns " . vret,,,, false)
+
+        if(vret>0) {
+            color := "BackgroundGreen"
+        } else {
+            color := "BackgroundRed"
+        }
+
+        bboxDraw(X1, Y1, X2, Y2, color)
+
+        if (doPause && vret) {
+            Pause
+        }
+
+        if GetKeyState("F4", "P") {
+            Pause
+        }
+        Gui, BoundingBox%winTitle%:Destroy
+    }
+
+    Gdip_ImageSearch_wbb(pBitmapHaystack,pNeedle,ByRef OutputList=""
     ,OuterX1=0,OuterY1=0,OuterX2=0,OuterY2=0,Variation=0,Trans=""
     ,SearchDirection=1,Instances=1,LineDelim="`n",CoordDelim=",") {
-    global titleHeight
-    yBias := titleHeight - 45
-    vret := Gdip_ImageSearch(pBitmapHaystack,pNeedle.needle,OutputList,OuterX1,OuterY1+yBias,OuterX2,OuterY2+yBias,Variation,Trans,SearchDirection,Instances,LineDelim,CoordDelim)
-    if(dbg_bbox)
-        bboxAndPause_immage(OuterX1, OuterY1+yBias, OuterX2, OuterY2+yBias, pNeedle, vret, dbg_bboxNpause)
+        global titleHeight
+        yBias := titleHeight - 45
+        vret := Gdip_ImageSearch(pBitmapHaystack,pNeedle.needle,OutputList,OuterX1,OuterY1+yBias,OuterX2,OuterY2+yBias,Variation,Trans,SearchDirection,Instances,LineDelim,CoordDelim)
+        if(dbg_bbox)
+            bboxAndPause_immage(OuterX1, OuterY1+yBias, OuterX2, OuterY2+yBias, pNeedle, vret, dbg_bboxNpause)
     return vret
 }
 
@@ -2863,25 +2860,25 @@ GetNeedle(Path) {
     static NeedleBitmaps := Object()
 
     if (NeedleBitmaps.HasKey(Path)) {
-        return NeedleBitmaps[Path]
-    } else {
-        pNeedle := Gdip_CreateBitmapFromFile(Path)
-        needleObj := Object()
-        needleObj.Path := Path
-        pathsplit := StrSplit(Path , "\")
-        needleObj.Name := pathsplit[pathsplit.MaxIndex()]
-        needleObj.needle := pNeedle
-        NeedleBitmaps[Path] := needleObj
-        return needleObj
-    }
+    return NeedleBitmaps[Path]
+} else {
+    pNeedle := Gdip_CreateBitmapFromFile(Path)
+    needleObj := Object()
+    needleObj.Path := Path
+    pathsplit := StrSplit(Path , "\")
+    needleObj.Name := pathsplit[pathsplit.MaxIndex()]
+    needleObj.needle := pNeedle
+    NeedleBitmaps[Path] := needleObj
+    return needleObj
+}
 
-    if (NeedleBitmaps.HasKey(Path)) {
-        return NeedleBitmaps[Path]
-    } else {
-        pNeedle := Gdip_CreateBitmapFromFile(Path)
-        NeedleBitmaps[Path] := pNeedle
-        return pNeedle
-    }
+if (NeedleBitmaps.HasKey(Path)) {
+    return NeedleBitmaps[Path]
+} else {
+    pNeedle := Gdip_CreateBitmapFromFile(Path)
+    NeedleBitmaps[Path] := pNeedle
+    return pNeedle
+}
 }
 
 DoTutorial() {
@@ -3066,7 +3063,7 @@ DoTutorial() {
         if (accountNameValue != "ERROR" && accountNameValue != "") {
             Random, randomNum, 1, 500 ; Generate random number from 1 to 500
             username := accountNameValue . "-" . randomNum
-            username := SubStr(username, 1, 14)  ; max character limit
+            username := SubStr(username, 1, 14) ; max character limit
             if(verboseLogging)
                 LogToFile("Using AccountName: " . username)
         } else {
@@ -3078,7 +3075,7 @@ DoTutorial() {
 
             Random, randomIndex, 1, name.MaxIndex()
             username := name[randomIndex]
-            username := SubStr(username, 1, 14)  ; max character limit
+            username := SubStr(username, 1, 14) ; max character limit
             if(verboseLogging)
                 LogToFile("Using random username: " . username)
         }
@@ -3399,7 +3396,7 @@ SelectPack(HG := false) {
         if(!friendIDs && friendID = "") {
             ; if we don't need to add any friends we can select directly the latest packs, or go directly to select other booster screen,
 
-            if(PackIsLatest) {   ; if selected pack is the latest pack select directly from the pack select screen
+            if(PackIsLatest) { ; if selected pack is the latest pack select directly from the pack select screen
                 packy := PackScreenAllPackY ; Y coordinate is lower when in pack select screen then in home screen
 
                 if(packx != MiddlePackX) { ; if it is already the middle Pack, no need to click again
@@ -3418,7 +3415,7 @@ SelectPack(HG := false) {
         }
     } else {
         ; if not first or not injected, or friends were added, always start from home page
-        FindImageAndClick(233, 400, 264, 428, , "Points", packx, packy, 1000)  ; open selected pack from home page
+        FindImageAndClick(233, 400, 264, 428, , "Points", packx, packy, 1000) ; open selected pack from home page
     }
 
     ; if not the ones showing in home screen, click select other booster packs
@@ -3478,7 +3475,7 @@ SelectPack(HG := false) {
         ; packs that can be opened after fully swiping down
         if (openPack = "Dialga" || openPack = "Palkia" || openPack = "Mew" || openPack = "Charizard" || openPack = "Mewtwo" || openPack = "Pikachu" || openPack = "Shining" || openPack = "Arceus") {
             Delay(3)
-            
+
             X := 266
             Y1 := 430
             Y2 := 50
@@ -3631,16 +3628,16 @@ SelectPack(HG := false) {
     } else {
         failSafe := A_TickCount
         failSafeTime := 0
-        failsafeClickExecuted := false  ; Flag to track if failsafe click has been executed
+        failsafeClickExecuted := false ; Flag to track if failsafe click has been executed
         Loop {
-            adbClick_wbb(151, 420)  ; open button
+            adbClick_wbb(151, 420) ; open button
 
             if(FindOrLoseImage(233, 486, 272, 519, , "Skip2", 0, failSafeTime)) {
                 break
             } else if(FindOrLoseImage(92, 299, 115, 317, , "notenoughitems", 0)) {
                 cantOpenMorePacks := 1
             } else if(FindOrLoseImage(60, 440, 90, 480, , "HourglassPack", 0, 1) || FindOrLoseImage(49, 449, 70, 474, , "HourGlassAndPokeGoldPack", 0, 1)) {
-                adbClick_wbb(205, 458)  ; Handle unexpected HG pack confirmation
+                adbClick_wbb(205, 458) ; Handle unexpected HG pack confirmation
             } else if(FindOrLoseImage(241, 377, 269, 407, , "closeduringpack", 0)) {
                 ; Handle restart caused due to network error
                 adbClick_wbb(139, 371)
@@ -3650,7 +3647,7 @@ SelectPack(HG := false) {
                 restartGameInstance("Stuck at pack opening")
                 return
             } else {
-                adbClick_wbb(200, 451)  ; Additional fallback click
+                adbClick_wbb(200, 451) ; Additional fallback click
                 Delay(1)
 
                 ; Execute failsafe click only once after 10 seconds
@@ -3748,32 +3745,32 @@ PackOpening() {
     CheckPack()
 
     if(!friendIDs && friendID = "" && accountOpenPacks >= maxAccountPackNum)
-        return
+    return
 
-    ;FindImageAndClick(233, 486, 272, 519, , "Skip", 146, 494) ;click on next until skip button appears
+;FindImageAndClick(233, 486, 272, 519, , "Skip", 146, 494) ;click on next until skip button appears
 
-    failSafe := A_TickCount
-    failSafeTime := 0
-    Loop {
-        Delay(1)
-        if(FindOrLoseImage(233, 486, 272, 519, , "Skip", 0, failSafeTime)) {
-            adbClick_wbb(239, 497)
-        } else if(FindOrLoseImage(120, 70, 150, 100, , "Next", 0, failSafeTime)) {
-            adbClick_wbb(146, 494) ;146, 494
-        } else if(FindOrLoseImage(120, 70, 150, 100, , "Next2", 0, failSafeTime)) {
-            adbClick_wbb(146, 494) ;146, 494
-        } else if(FindOrLoseImage(121, 465, 140, 485, , "ConfirmPack", 0, failSafeTime)) {
-            break
-        } else if(FindOrLoseImage(178, 193, 251, 282, , "Hourglass", 0, failSafeTime)) {
-            break
-        } else {
-            adbClick_wbb(146, 494) ;146, 494
-        }
-        failSafeTime := (A_TickCount - failSafe) // 1000
-        CreateStatusMessage("Waiting for Home`n(" . failSafeTime . "/45 seconds)")
-        if(failSafeTime > 45)
-            restartGameInstance("Stuck at Home")
+failSafe := A_TickCount
+failSafeTime := 0
+Loop {
+    Delay(1)
+    if(FindOrLoseImage(233, 486, 272, 519, , "Skip", 0, failSafeTime)) {
+        adbClick_wbb(239, 497)
+    } else if(FindOrLoseImage(120, 70, 150, 100, , "Next", 0, failSafeTime)) {
+        adbClick_wbb(146, 494) ;146, 494
+    } else if(FindOrLoseImage(120, 70, 150, 100, , "Next2", 0, failSafeTime)) {
+        adbClick_wbb(146, 494) ;146, 494
+    } else if(FindOrLoseImage(121, 465, 140, 485, , "ConfirmPack", 0, failSafeTime)) {
+        break
+    } else if(FindOrLoseImage(178, 193, 251, 282, , "Hourglass", 0, failSafeTime)) {
+        break
+    } else {
+        adbClick_wbb(146, 494) ;146, 494
     }
+    failSafeTime := (A_TickCount - failSafe) // 1000
+    CreateStatusMessage("Waiting for Home`n(" . failSafeTime . "/45 seconds)")
+    if(failSafeTime > 45)
+        restartGameInstance("Stuck at Home")
+}
 }
 
 HourglassOpening(HG := false, NEIRestart := true) {
@@ -3866,7 +3863,7 @@ HourglassOpening(HG := false, NEIRestart := true) {
 
         clickButton := FindOrLoseImage(145, 440, 258, 480, 80, "Button", 0, failSafeTime)
         if(clickButton) {
-            StringSplit, pos, clickButton, `,  ; Split at ", "
+            StringSplit, pos, clickButton, `, ; Split at ", "
             if (scaleParam = 287) {
                 pos2 += 5
             }
@@ -3914,30 +3911,30 @@ HourglassOpening(HG := false, NEIRestart := true) {
     CheckPack()
 
     if(!friendIDs && friendID = "" && accountOpenPacks >= maxAccountPackNum)
-        return
+    return
 
-    ;FindImageAndClick(233, 486, 272, 519, , "Skip", 146, 494) ;click on next until skip button appears
+;FindImageAndClick(233, 486, 272, 519, , "Skip", 146, 494) ;click on next until skip button appears
 
-    failSafe := A_TickCount
-    failSafeTime := 0
-    Loop {
-        Delay(1)
-        if(FindOrLoseImage(233, 486, 272, 519, , "Skip", 0, failSafeTime)) {
-            adbClick_wbb(239, 497)
-        } else if(FindOrLoseImage(120, 70, 150, 100, , "Next", 0, failSafeTime)) {
-            adbClick_wbb(146, 494) ;146, 494
-        } else if(FindOrLoseImage(120, 70, 150, 100, , "Next2", 0, failSafeTime)) {
-            adbClick_wbb(146, 494) ;146, 494
-        } else if(FindOrLoseImage(121, 465, 140, 485, , "ConfirmPack", 0, failSafeTime)) {
-            break
-        } else {
-            adbClick_wbb(146, 494) ;146, 494
-        }
-        failSafeTime := (A_TickCount - failSafe) // 1000
-        CreateStatusMessage("Waiting for ConfirmPack`n(" . failSafeTime . "/45 seconds)")
-        if(failSafeTime > 45)
-            restartGameInstance("Stuck at ConfirmPack")
+failSafe := A_TickCount
+failSafeTime := 0
+Loop {
+    Delay(1)
+    if(FindOrLoseImage(233, 486, 272, 519, , "Skip", 0, failSafeTime)) {
+        adbClick_wbb(239, 497)
+    } else if(FindOrLoseImage(120, 70, 150, 100, , "Next", 0, failSafeTime)) {
+        adbClick_wbb(146, 494) ;146, 494
+    } else if(FindOrLoseImage(120, 70, 150, 100, , "Next2", 0, failSafeTime)) {
+        adbClick_wbb(146, 494) ;146, 494
+    } else if(FindOrLoseImage(121, 465, 140, 485, , "ConfirmPack", 0, failSafeTime)) {
+        break
+    } else {
+        adbClick_wbb(146, 494) ;146, 494
     }
+    failSafeTime := (A_TickCount - failSafe) // 1000
+    CreateStatusMessage("Waiting for ConfirmPack`n(" . failSafeTime . "/45 seconds)")
+    if(failSafeTime > 45)
+        restartGameInstance("Stuck at ConfirmPack")
+}
 }
 
 DoWonderPickOnly() {
@@ -3960,7 +3957,7 @@ DoWonderPickOnly() {
         if(FindOrLoseImage(240, 80, 265, 100, , "WonderPick", 1, failSafeTime)) {
             clickButton := FindOrLoseImage(100, 367, 190, 480, 100, "Button", 0, failSafeTime)
             if(clickButton) {
-                StringSplit, pos, clickButton, `,  ; Split at ", "
+                StringSplit, pos, clickButton, `, ; Split at ", "
                 ; Adjust pos2 if scaleParam is 287 for 100%
                 if (scaleParam = 287) {
                     pos2 += 5
@@ -4058,7 +4055,7 @@ DoWonderPick() {
         }
         else if(FindOrLoseImage(191, 393, 211, 411, , "Shop", 1, failSafeTime))
             ;adbInputEvent("111") ;send ESC
-            adbClick_wbb(139, 492)
+        adbClick_wbb(139, 492)
         else
             break
         failSafeTime := (A_TickCount - failSafe) // 1000
@@ -4074,29 +4071,29 @@ SpendAllHourglass() {
 
     SelectPack("HGPack")
     if(cantOpenMorePacks)
-        return
+    return
 
-    PackOpening()
-    if(cantOpenMorePacks || (!friendIDs && friendID = "" && accountOpenPacks >= maxAccountPackNum))
-        return
+PackOpening()
+if(cantOpenMorePacks || (!friendIDs && friendID = "" && accountOpenPacks >= maxAccountPackNum))
+    return
 
-    ; Keep opening packs until we can't anymore
-    while (!cantOpenMorePacks && (friendIDs || friendID != "" || accountOpenPacks < maxAccountPackNum)) {
-        if(packMethod) {
-            ; For packMethod=true: remove/re-add friends between each pack
-            friendsAdded := AddFriends(true)  ; true parameter removes and re-adds friends
-            SelectPack("HGPack")
-            if(cantOpenMorePacks)
-                break
-            PackOpening()  ; Use PackOpening since we just selected the pack
-        } else {
-            ; For packMethod=false: direct hourglass opening
-            HourglassOpening(true)
-        }
-
-        if(cantOpenMorePacks || (!friendIDs && friendID = "" && accountOpenPacks >= maxAccountPackNum))
+; Keep opening packs until we can't anymore
+while (!cantOpenMorePacks && (friendIDs || friendID != "" || accountOpenPacks < maxAccountPackNum)) {
+    if(packMethod) {
+        ; For packMethod=true: remove/re-add friends between each pack
+        friendsAdded := AddFriends(true) ; true parameter removes and re-adds friends
+        SelectPack("HGPack")
+        if(cantOpenMorePacks)
             break
+        PackOpening() ; Use PackOpening since we just selected the pack
+    } else {
+        ; For packMethod=false: direct hourglass opening
+        HourglassOpening(true)
     }
+
+    if(cantOpenMorePacks || (!friendIDs && friendID = "" && accountOpenPacks >= maxAccountPackNum))
+        break
+}
 }
 
 ; For Special Missions 2025
@@ -4295,19 +4292,19 @@ HandleMissionDeckFailsafe() {
 }
 
 OpenGiftPacks(){
-	GoToMain()
-	
+    GoToMain()
+
     global openPack
     properPack := openPack
     openPack := "UnknownGiftPack"
 
-	; Navigate to gifts/mail screen with timeout protection
+    ; Navigate to gifts/mail screen with timeout protection
     failSafe := A_TickCount
     failSafeTime := 0
     FindImageAndClick(240, 70, 270, 110, , "Mail", 34, 518, 1000)
     Loop {
         adbClick_wbb(250, 90)
-		Delay(1)
+        Delay(1)
         if (FindOrLoseImage(164, 431, 224, 460, , "ClaimAll", 0, failSafeTime)) {
             break
         }
@@ -4324,7 +4321,7 @@ OpenGiftPacks(){
             ;if (FindOrLoseImage(208, 168, 231, 175, , "Claim", 0, failSafeTime)) {
             if(FindOrLoseImage(199, 278, 203, 287, , "PackCode", 0, failSafeTime)) {
                 noClaim := false
-            ;if (FindOrLoseImage(164, 431, 224, 460, , "ClaimAll", 0, failSafeTime)) {
+                ;if (FindOrLoseImage(164, 431, 224, 460, , "ClaimAll", 0, failSafeTime)) {
                 break
             }
             adbClick_wbb(224, 173)
@@ -4361,63 +4358,60 @@ OpenGiftPacks(){
         }
         if (packClaimed) {
             failSafeTime := 0
-			Delay(1)
+            Delay(1)
 
-			if(setSpeed > 1) {
-			FindImageAndClick(25, 145, 70, 170, , "speedmodMenu", 18, 109, 2000) ; click mod settings
-			FindImageAndClick(9, 170, 25, 190, , "One", 26, 180) ; click mod settings
-			Delay(1)
-			adbClick_wbb(41, 339)
-			Delay(1)
-			}
-			failSafe := A_TickCount
-			failSafeTime := 0
-			Loop {
-				adbSwipe_wbb(adbSwipeParams)
-				Sleep, 5
-				if(FindOrLoseImage(225, 273, 235, 290, , "Pack", 1, failSafeTime)){
-					if(setSpeed > 1) {
-						if(setSpeed = 3) {
-							FindImageAndClick(25, 145, 70, 170, , "speedmodMenu", 18, 109, 2000)
-							FindImageAndClick(182, 170, 194, 190, , "Three", 187, 180) ; click 3x
-						} else {
-							FindImageAndClick(25, 145, 70, 170, , "speedmodMenu", 18, 109, 2000)
-							FindImageAndClick(100, 170, 113, 190, , "Two", 107, 180) ; click 2x
-						}
-					}
-					adbClick_wbb(41, 339)
-					
-					
-					
-					break ;HERE WE GIVE TONEXT FUNCTION
-				}
-				failSafeTime := (A_TickCount - failSafe) // 1000
-				CreateStatusMessage("Waiting for Pack`n(" . failSafeTime . "/45 seconds)")
-			}
+            if(setSpeed > 1) {
+                FindImageAndClick(25, 145, 70, 170, , "speedmodMenu", 18, 109, 2000) ; click mod settings
+                FindImageAndClick(9, 170, 25, 190, , "One", 26, 180) ; click mod settings
+                Delay(1)
+                adbClick_wbb(41, 339)
+                Delay(1)
+            }
+            failSafe := A_TickCount
+            failSafeTime := 0
+            Loop {
+                adbSwipe_wbb(adbSwipeParams)
+                Sleep, 5
+                if(FindOrLoseImage(225, 273, 235, 290, , "Pack", 1, failSafeTime)){
+                    if(setSpeed > 1) {
+                        if(setSpeed = 3) {
+                            FindImageAndClick(25, 145, 70, 170, , "speedmodMenu", 18, 109, 2000)
+                            FindImageAndClick(182, 170, 194, 190, , "Three", 187, 180) ; click 3x
+                        } else {
+                            FindImageAndClick(25, 145, 70, 170, , "speedmodMenu", 18, 109, 2000)
+                            FindImageAndClick(100, 170, 113, 190, , "Two", 107, 180) ; click 2x
+                        }
+                    }
+                    adbClick_wbb(41, 339)
 
-			
+                    break ;HERE WE GIVE TONEXT FUNCTION
+                }
+                failSafeTime := (A_TickCount - failSafe) // 1000
+                CreateStatusMessage("Waiting for Pack`n(" . failSafeTime . "/45 seconds)")
+            }
+
             FindImageAndClick(170, 98, 270, 125, 5, "Opening", 239, 497, 40)
             CheckPack()
-			
-			failSafe := A_TickCount
+
+            failSafe := A_TickCount
             failSafeTime := 0
-			Loop {
-                    if(FindOrLoseImage(233, 486, 272, 519, , "Skip", 0, failSafeTime)) {
-                        adbClick_wbb(239, 497)
-                    } else {
-                        adbClick_wbb(100, 494)
-                        Delay(2)
-                    }
-                    if(FindOrLoseImage(164, 431, 224, 460, , "ClaimAll", 0, failSafeTime)) {
-                        packClaimed := false
-                        break
-                    }
-                    if(FindOrLoseImage(199, 278, 203, 287, , "PackCode", 0, failSafeTime)) {
-                        break
-                    }
-					Sleep, 10
+            Loop {
+                if(FindOrLoseImage(233, 486, 272, 519, , "Skip", 0, failSafeTime)) {
+                    adbClick_wbb(239, 497)
+                } else {
+                    adbClick_wbb(100, 494)
+                    Delay(2)
+                }
+                if(FindOrLoseImage(164, 431, 224, 460, , "ClaimAll", 0, failSafeTime)) {
+                    packClaimed := false
+                    break
+                }
+                if(FindOrLoseImage(199, 278, 203, 287, , "PackCode", 0, failSafeTime)) {
+                    break
+                }
+                Sleep, 10
             }
-			
+
         }
     }
     openPack := properPack
@@ -4428,74 +4422,74 @@ CreateButtonGUI() {
     global ButtonGUICreated, winTitle, ButtonGUIName
 
     if (ButtonGUICreated)
-        return
+    return
 
-    RetryCount := 0
-    MaxRetries := 10
+RetryCount := 0
+MaxRetries := 10
 
-    Loop {
-        try {
-            WinGetPos, x, y, Width, Height, %winTitle%
-            OwnerWND := WinExist(winTitle)
+Loop {
+    try {
+        WinGetPos, x, y, Width, Height, %winTitle%
+        OwnerWND := WinExist(winTitle)
 
-            x4 := x + 5
-            y4 := y + 535
+        x4 := x + 5
+        y4 := y + 535
 
-            buttonWidth := 50
-            if (scaleParam = 287)
-                buttonWidth += 5
+        buttonWidth := 50
+        if (scaleParam = 287)
+            buttonWidth += 5
 
-            ; Store the full GUI name for reliable reuse
-            ButtonGUIName := "ButtonBar" . winTitle
+        ; Store the full GUI name for reliable reuse
+        ButtonGUIName := "ButtonBar" . winTitle
 
-            Gui, %ButtonGUIName%:New, +Owner%OwnerWND% -AlwaysOnTop +ToolWindow -Caption -DPIScale
-            Gui, Margin, 4, 4
-            Gui, Font, s5 cGray Norm Bold, Segoe UI
-            Gui, Add, Button, x0     y0 w%buttonWidth% h25 gReloadScript,  Reload  (Shift+F5)
-            Gui, Add, Button, x+0    y0 w%buttonWidth% h25 gPauseScript,   Pause (Shift+F6)
-            Gui, Add, Button, x+0    y0 w%buttonWidth% h25 gResumeScript,  Resume (Shift+F6)
-            Gui, Add, Button, x+0    y0 w%buttonWidth% h25 gStopScript,    Stop (Shift+F7)
-            Gui, Add, Button, x+0    y0 w%buttonWidth% h25 gDevMode,       Dev Mode (Shift+F8)
+        Gui, %ButtonGUIName%:New, +Owner%OwnerWND% -AlwaysOnTop +ToolWindow -Caption -DPIScale
+        Gui, Margin, 4, 4
+        Gui, Font, s5 cGray Norm Bold, Segoe UI
+        Gui, Add, Button, x0 y0 w%buttonWidth% h25 gReloadScript, Reload (Shift+F5)
+        Gui, Add, Button, x+0 y0 w%buttonWidth% h25 gPauseScript, Pause (Shift+F6)
+        Gui, Add, Button, x+0 y0 w%buttonWidth% h25 gResumeScript, Resume (Shift+F6)
+        Gui, Add, Button, x+0 y0 w%buttonWidth% h25 gStopScript, Stop (Shift+F7)
+        Gui, Add, Button, x+0 y0 w%buttonWidth% h25 gDevMode, Dev Mode (Shift+F8)
 
-            DllCall("SetWindowPos", "Ptr", WinExist(), "Ptr", 1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x13)
+        DllCall("SetWindowPos", "Ptr", WinExist(), "Ptr", 1, "Int", 0, "Int", 0, "Int", 0, "Int", 0, "UInt", 0x13)
 
-            ; Show initially using your original x4/y4 style
-            Gui, %ButtonGUIName%:Show, NoActivate x%x4% y%y4% w275 h30
+        ; Show initially using your original x4/y4 style
+        Gui, %ButtonGUIName%:Show, NoActivate x%x4% y%y4% w275 h30
 
-            ButtonGUICreated := true
-            CreateStatusMessage("Button GUI created.")
-            return true
-        }
-        catch {
-            RetryCount++
-            if (RetryCount >= MaxRetries) {
-                CreateStatusMessage("Failed to create button GUI.",,,, false)
-                return false
-            }
-            Sleep, 1000
-        }
-        CreateStatusMessage("Trying to create button GUI...")
-        Sleep, 1000
-    }
+        ButtonGUICreated := true
+        CreateStatusMessage("Button GUI created.")
+    return true
+}
+catch {
+    RetryCount++
+    if (RetryCount >= MaxRetries) {
+        CreateStatusMessage("Failed to create button GUI.",,,, false)
+    return false
+}
+Sleep, 1000
+}
+CreateStatusMessage("Trying to create button GUI...")
+Sleep, 1000
+}
 }
 
 UpdateButtonGUIPosition() {
     global winTitle, ButtonGUICreated, ButtonGUIName
 
     if (!ButtonGUICreated)
-        return
+    return
 
-    if !WinExist(winTitle)
-        return
+if !WinExist(winTitle)
+    return
 
-    WinGetPos, x, y, , , %winTitle%
+WinGetPos, x, y, , , %winTitle%
 
-    ; Same calculation style as your original
-    newX := x + 5
-    newY := y + 535
+; Same calculation style as your original
+newX := x + 5
+newY := y + 535
 
-    ; Use the stored full GUI name and show with new coordinates
-    Gui, %ButtonGUIName%:Show, NoActivate x%newX% y%newY% w275 h30
+; Use the stored full GUI name and show with new coordinates
+Gui, %ButtonGUIName%:Show, NoActivate x%newX% y%newY% w275 h30
 }
 
 GoToMain(fromSocial := false) {
@@ -4532,7 +4526,7 @@ killAHK(scriptName := "") {
                 WinGet, pid, PID, ahk_id %ID%
                 WinKill, ahk_id %ID%
                 killed := killed + 1
-                
+
                 ; Verify process is actually dead
                 Process, Exist, %pid%
                 if (ErrorLevel) {

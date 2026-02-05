@@ -91,11 +91,11 @@ Sleep, %instanceSleep%
 if (InStr(defaultLanguage, "100")) {
     scaleParam := 287
 } else {
-     	if (MuMuv5) {
-			scaleParam := 283
-		} else {
-			scaleParam := 277
-		}
+    if (MuMuv5) {
+        scaleParam := 283
+    } else {
+        scaleParam := 277
+    }
 }
 
 DirectlyPositionWindow()
@@ -146,11 +146,11 @@ global 99Configs := {}
 Loop {
     if (autoUseGPTest) {
         autotest_time := (A_TickCount - autotest) // 1000
-        CreateStatusMessage("Auto GP Test Timer : " . autotest_time .  "/ " . TestTime . " seconds", "AutoGPTest", 0, 605, false, true)
+        CreateStatusMessage("Auto GP Test Timer : " . autotest_time . "/ " . TestTime . " seconds", "AutoGPTest", 0, 605, false, true)
         if (autotest_time >= TestTime) {
             A_gptest := 1
             ToggleTestScript()
-        }        
+        } 
     }
 
     if (GPTest) {
@@ -206,7 +206,7 @@ Loop {
                     CreateStatusMessage("Error message detected. Clicking retry...",,,, false)
                     LogToFile("Error message in Main " . scriptName . ". Clicking retry...")
                     Sleep, 1000
-                    adbClick(82, 389)  ; Click retry button
+                    adbClick(82, 389) ; Click retry button
                     Sleep, 1000
                     adbClick(139, 386) ; Click OK/confirm
                     Sleep, 1000
@@ -216,11 +216,11 @@ Loop {
                     CreateStatusMessage("Start-up error detected. Clearing and reloading...",,,, false)
                     LogToFile("Start-up error in Main " . scriptName . ". Reloading...")
                     Sleep, 2000
-                    adbClick(139, 440)  ; Click X to close error
+                    adbClick(139, 440) ; Click X to close error
                     Sleep, 4000
                     Reload
                 } else if(clickButton) {
-                    StringSplit, pos, clickButton, `,  ; Split at ", "
+                    StringSplit, pos, clickButton, `, ; Split at ", "
                     if (scaleParam = 287) {
                         pos2 += 5
                     }
@@ -418,7 +418,7 @@ FindImageAndClick(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT",
         pBitmap := from_window(WinExist(winTitle))
         Path = %imagePath%App.png
         if (MuMuv5)
-        Path = %imagePath%App2.png
+            Path = %imagePath%App2.png
         pNeedle := GetNeedle(Path)
         ; ImageSearch within the region
         vRet := Gdip_ImageSearch(pBitmap, pNeedle, vPosXY, 15, 155, 270, 420, searchVariation)
@@ -459,13 +459,12 @@ resetWindows(){
             if (instanceIndex = "")
                 instanceIndex := 1
 
-                    
             if (MuMuv5) {
                 titleHeight := 50
             } else {
                 titleHeight := 45
             }
-            
+
             borderWidth := 4 - 1
             rowHeight := titleHeight + 489 + 4
             currentRow := Floor((instanceIndex - 1) / Columns)
@@ -477,7 +476,7 @@ resetWindows(){
             } else {
                 x := MonitorLeft + (Mod((instanceIndex - 1), Columns) * scaleParam)
             }
-            
+
             WinSet, Style, -0xC00000, %Title%
             WinMove, %Title%, , %x%, %y%, %scaleParam%, %rowHeight%
             WinSet, Style, +0xC00000, %Title%
