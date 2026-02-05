@@ -59,13 +59,6 @@ if !FileExist(mumuFolder)
     mumuFolder := folderPath "\MuMuPlayer-12"
 if !FileExist(mumuFolder)
     mumuFolder := folderPath "\MuMuPlayer12"
-
-if !FileExist(mumuFolder)
-    mumuFolder = %folderPath%\MuMuPlayer
-
-; Set MuMuManager.exe location
-mumuManagerPath := mumuFolder "\nx_main\MuMuManager.exe"
-
 if !FileExist(mumuFolder)
     mumuFolder = %folderPath%\MuMuPlayer
 
