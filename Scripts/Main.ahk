@@ -10,9 +10,9 @@
 #Include %A_ScriptDir%\Include\Utils.ahk
 #Include %A_ScriptDir%\Include\Database.ahk
 #Include %A_ScriptDir%\Include\CardDetection.ahk
-#Include %A_ScriptDir%\Include\WonderPickManager.ahk
 #Include %A_ScriptDir%\Include\AccountManager.ahk
 #Include %A_ScriptDir%\Include\FriendManager.ahk
+#Include %A_ScriptDir%\Include\Dictionary.ahk
 
 #SingleInstance on
 ;SetKeyDelay, -1, -1
@@ -28,7 +28,7 @@ CoordMode, Pixel, Screen
 DllCall("AllocConsole")
 WinHide % "ahk_id " DllCall("GetConsoleWindow", "ptr")
 
-global winTitle, changeDate, failSafe, openPack, Delay, failSafeTime, StartSkipTime, Columns, failSafe, scriptName, GPTest, StatusText, defaultLanguage, setSpeed, jsonFileName, pauseToggle, SelectedMonitorIndex, swipeSpeed, godPack, scaleParam, skipInvalidGP, deleteXML, packs, FriendID, AddFriend, Instances, showStatus
+global winTitle, changeDate, failSafe, openPack, Delay, failSafeTime, StartSkipTime, Columns, failSafe, scriptName, GPTest, StatusText, defaultLanguage, setSpeed, jsonFileName, pauseToggle, SelectedMonitorIndex, swipeSpeed, godPack, scaleParam, skipInvalidGP, deleteXML, packs, FriendID, AddFriend, Instances, showStatus, stopToggle
 global triggerTestNeeded, testStartTime, firstRun, minStars, minStarsA2b, vipIdsURL
 global autoUseGPTest, autotest, autotest_time, A_gptest, TestTime
 global MuMuv5, titleHeight
@@ -46,6 +46,7 @@ scriptName := StrReplace(A_ScriptName, ".ahk")
 Menu, Tray, Icon, %A_ScriptDir%\..\GUI\Icons\Main.ico
 winTitle := scriptName
 pauseToggle := false
+stopToggle := false
 showStatus := true
 jsonFileName := A_ScriptDir . "\..\json\Packs.json"
 IniRead, FriendID, %A_ScriptDir%\..\Settings.ini, UserSettings, FriendID
@@ -57,6 +58,8 @@ IniRead, Columns, %A_ScriptDir%\..\Settings.ini, UserSettings, Columns, 5
 IniRead, openPack, %A_ScriptDir%\..\Settings.ini, UserSettings, openPack, 1
 IniRead, setSpeed, %A_ScriptDir%\..\Settings.ini, UserSettings, setSpeed, 2x
 IniRead, defaultLanguage, %A_ScriptDir%\..\Settings.ini, UserSettings, defaultLanguage, Scale125
+IniRead, defaultBotLanguage, %A_ScriptDir%\..\Settings.ini, UserSettings, defaultBotLanguage, 1
+global stopDictionary := CreateGUITextByLanguage(defaultBotLanguage, "")
 IniRead, SelectedMonitorDeviceName, %A_ScriptDir%\..\Settings.ini, UserSettings, SelectedMonitorDeviceName, "\\.\DISPLAY1"
 SelectedMonitorIndex := GetMonitorIndexFromDeviceName(SelectedDeviceName)
 IniRead, swipeSpeed, %A_ScriptDir%\..\Settings.ini, UserSettings, swipeSpeed, 350
@@ -85,13 +88,6 @@ IniWrite, 0, %A_ScriptDir%\%scriptName%.ini, Metrics, InGPTestMode
 instanceSleep := scriptName * 1000
 Sleep, %instanceSleep%
 
-; Attempt to connect to ADB
-ConnectAdb(folderPath)
-Sleep, 2000
-CreateStatusMessage("Disabling background services...")
-DisableBackgroundServices()
-Sleep, 5000
-
 if (InStr(defaultLanguage, "100")) {
     scaleParam := 287
 } else {
@@ -101,6 +97,15 @@ if (InStr(defaultLanguage, "100")) {
 			scaleParam := 277
 		}
 }
+
+DirectlyPositionWindow()
+Sleep, 1000
+
+ConnectAdb(folderPath)
+Sleep, 2000
+CreateStatusMessage("Disabling background services...")
+DisableBackgroundServices()
+Sleep, 5000
 
 resetWindows()
 global ButtonGUICreated := false
@@ -361,6 +366,7 @@ FindImageAndClick(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT",
 
     Loop { ; Main loop
         Sleep, 100
+
         if(click) {
             ElapsedClickTime := A_TickCount - clickTime
             if(ElapsedClickTime > sleepTime) {
@@ -504,7 +510,7 @@ restartGameInstance(reason, RL := true){
 
     Sleep, 3000
     if(RL) {
-        LogToFile("Restarted game for instance " . scriptName . ". Reason: " reason, "Restart.txt")
+        LogToFile("Restarted game. Reason: " reason)
         Reload
     }
 }
@@ -586,10 +592,10 @@ ResumeScript:
     failSafe := A_TickCount
 return
 
-; Stop Script
+; Stop Script - Main.ahk always exits immediately (no "end of run" concept)
 StopScript:
     CreateStatusMessage("Stopping script...",,,, false)
-ExitApp
+    ExitApp
 return
 
 ShowStatusMessages:
@@ -735,7 +741,7 @@ from_window(ByRef image) {
 
 ~+F5::Reload
 ~+F6::Pause
-~+F7::ExitApp
+~+F7::ExitApp  ; Main.ahk always exits immediately - no "end of run" concept
 ~+F8::ToggleStatusMessages()
 ~+F9::ToggleTestScript() ; hoytdj Add
 
@@ -1385,6 +1391,96 @@ Gdip_ImageSearch_wbb(pBitmapHaystack,pNeedle,ByRef OutputList=""
     if(dbg_bbox)
         bboxAndPause_immage(OuterX1, OuterY1+yBias, OuterX2, OuterY2+yBias, pNeedle, vret, dbg_bboxNpause)
     return vret
+}
+
+DirectlyPositionWindow() {
+    global Columns, winTitle, SelectedMonitorIndex, scaleParam, rowGap, titleHeight, MuMuv5
+
+    ; Make sure rowGap is defined
+    if (!rowGap)
+        rowGap := 100
+
+    ; Get monitor information
+    SelectedMonitorIndex := RegExReplace(SelectedMonitorIndex, ":.*$")
+    SysGet, Monitor, Monitor, %SelectedMonitorIndex%
+
+    ; Calculate position based on instance number
+    Title := winTitle
+
+    instanceIndex := StrReplace(Title, "Main", "")
+    if (instanceIndex = "")
+        instanceIndex := 1
+
+    if (MuMuv5) {
+        titleHeight := 50
+    } else {
+        titleHeight := 45
+    }
+
+    borderWidth := 4 - 1
+    rowHeight := titleHeight + 489 + 4
+    currentRow := Floor((instanceIndex - 1) / Columns)
+
+    y := MonitorTop + (currentRow * rowHeight) + (currentRow * rowGap)
+    if (MuMuv5) {
+        x := MonitorLeft + (Mod((instanceIndex - 1), Columns) * (scaleParam - borderWidth * 2))
+    } else {
+        x := MonitorLeft + (Mod((instanceIndex - 1), Columns) * scaleParam)
+    }
+
+    WinSet, Style, -0xC00000, %Title%
+    WinMove, %Title%, , %x%, %y%, %scaleParam%, %rowHeight%
+    WinSet, Style, +0xC00000, %Title%
+    WinSet, Redraw, , %Title%
+
+    CreateStatusMessage("Positioned window at x:" . x . " y:" . y,,,, false)
+
+    return true
+}
+
+DirectlyPositionWindow() {
+    global Columns, winTitle, SelectedMonitorIndex, scaleParam, rowGap, titleHeight, MuMuv5
+
+    ; Make sure rowGap is defined
+    if (!rowGap)
+        rowGap := 100
+
+    ; Get monitor information
+    SelectedMonitorIndex := RegExReplace(SelectedMonitorIndex, ":.*$")
+    SysGet, Monitor, Monitor, %SelectedMonitorIndex%
+
+    ; Calculate position based on instance number
+    Title := winTitle
+
+    instanceIndex := StrReplace(Title, "Main", "")
+    if (instanceIndex = "")
+        instanceIndex := 1
+
+    if (MuMuv5) {
+        titleHeight := 50
+    } else {
+        titleHeight := 45
+    }
+
+    borderWidth := 4 - 1
+    rowHeight := titleHeight + 489 + 4
+    currentRow := Floor((instanceIndex - 1) / Columns)
+
+    y := MonitorTop + (currentRow * rowHeight) + (currentRow * rowGap)
+    if (MuMuv5) {
+        x := MonitorLeft + (Mod((instanceIndex - 1), Columns) * (scaleParam - borderWidth * 2))
+    } else {
+        x := MonitorLeft + (Mod((instanceIndex - 1), Columns) * scaleParam)
+    }
+
+    WinSet, Style, -0xC00000, %Title%
+    WinMove, %Title%, , %x%, %y%, %scaleParam%, %rowHeight%
+    WinSet, Style, +0xC00000, %Title%
+    WinSet, Redraw, , %Title%
+
+    CreateStatusMessage("Positioned window at x:" . x . " y:" . y,,,, false)
+
+    return true
 }
 
 CreateButtonGUI() {

@@ -52,15 +52,19 @@ if (InStr(defaultLanguage, "100")) {
 
 mumuFolder = %folderPath%\MuMuPlayerGlobal-12.0
 if !FileExist(mumuFolder)
-mumuFolder := folderPath "\MuMuPlayerGlobal-12.0"
-if !FileExist(mumuFolder)
-    mumuFolder := folderPath "\MuMu Player 12"
-if !FileExist(mumuFolder)
-    mumuFolder := folderPath "\MuMuPlayerGlobal-12.0"
-if !FileExist(mumuFolder)
     mumuFolder := folderPath "\MuMu Player 12"
 if !FileExist(mumuFolder)
     mumuFolder := folderPath "\MuMuPlayer"
+if !FileExist(mumuFolder)
+    mumuFolder := folderPath "\MuMuPlayer-12"
+if !FileExist(mumuFolder)
+    mumuFolder := folderPath "\MuMuPlayer12"
+
+if !FileExist(mumuFolder)
+    mumuFolder = %folderPath%\MuMuPlayer
+
+; Set MuMuManager.exe location
+mumuManagerPath := mumuFolder "\nx_main\MuMuManager.exe"
 
 if !FileExist(mumuFolder)
     mumuFolder = %folderPath%\MuMuPlayer
@@ -703,6 +707,20 @@ DirectlyPositionWindow(instanceNum := "") {
     CreateStatusMessage("Positioned window at x:" . x . " y:" . y,,,, false)
 
     return true
+isMuMuv5(){
+    global folderPath
+    mumuFolder := folderPath . "\MuMuPlayerGlobal-12.0"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMu Player 12"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMuPlayer"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMuPlayer-12"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMuPlayer12"
+    if FileExist(mumuFolder . "\nx_main")
+        return true
+    return false
 }
 
 

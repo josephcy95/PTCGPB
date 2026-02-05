@@ -11,9 +11,9 @@
 #Include %A_ScriptDir%\Include\Utils.ahk
 #Include %A_ScriptDir%\Include\Database.ahk
 #Include %A_ScriptDir%\Include\CardDetection.ahk
-#Include %A_ScriptDir%\Include\WonderPickManager.ahk
 #Include %A_ScriptDir%\Include\AccountManager.ahk
 #Include %A_ScriptDir%\Include\FriendManager.ahk
+#Include %A_ScriptDir%\Include\Dictionary.ahk
 
 #SingleInstance on
 SetMouseDelay, -1
@@ -32,6 +32,14 @@ if(!useAdbManager) {
 	WinHide % "ahk_id " DllCall("GetConsoleWindow", "ptr")
 }
 
+; Register OnExit handler to clean up ADB shell properly when script exits
+; DISABLED - was causing Reload delays due to blocking ADB shell communication
+; OnExit("CleanupOnExit")
+
+; Register message handler to receive "stop after run" signal from instance 1
+; WM_USER (0x400) + 0x100 = custom message for stop after run
+OnMessage(0x500, "OnStopAfterRunMessage")
+
 global winTitle, changeDate, failSafe, openPack, Delay, failSafeTime, StartSkipTime, Columns, failSafe, scriptName, GPTest, StatusText, defaultLanguage, setSpeed, jsonFileName, pauseToggle, SelectedMonitorIndex, swipeSpeed, godPack, scaleParam, deleteMethod, packs, FriendID, friendIDs, Instances, username, friendCode, stopToggle, friended, runMain, Mains, showStatus, injectMethod, packMethod, loadDir, loadedAccount, nukeAccount, CheckShinyPackOnly, TrainerCheck, FullArtCheck, RainbowCheck, ShinyCheck, dateChange, foundGP, friendsAdded, PseudoGodPack, packArray, CrownCheck, ImmersiveCheck, InvalidCheck, slowMotion, screenShot, accountFile, invalid, starCount, keepAccount
 global Mewtwo, Charizard, Pikachu, Mew, Dialga, Palkia, Arceus, Shining, Solgaleo, Lunala, Buzzwole, Eevee, HoOh, Lugia, Springs, Deluxe, MegaGyarados, MegaBlaziken, MegaAltaria, CrimsonBlaze, Parade
 global shinyPacks, minStars, minStarsShiny, minStarsA1Mewtwo, minStarsA1Charizard, minStarsA1Pikachu, minStarsA1a, minStarsA2Dialga, minStarsA2Palkia, minStarsA2a, minStarsA2b, minStarsA3Solgaleo, minStarsA3Lunala, minStarsA3a, minStarsA4HoOh, minStarsA4Lugia, minStarsA4Springs, minStarsA4Deluxe, minStarsParade, minStarsCrimsonBlaze, minStarsMegaGyarados, minStarsMegaBlaziken, minStarsMegaAltaria
@@ -39,7 +47,6 @@ global DeadCheck
 global s4tEnabled, s4tSilent, s4t3Dmnd, s4t4Dmnd, s4t1Star, s4tGholdengo, s4tWP, s4tWPMinCards, s4tDiscordWebhookURL, s4tDiscordUserId, s4tSendAccountXml
 global s4tTrainer, s4tRainbow, s4tFullArt, s4tCrown, s4tImmersive, s4tShiny1Star, s4tShiny2Star
 global claimDailyMission, wonderpickForEventMissions
-global checkWPthanks, wpThanksSavedUsername, wpThanksSavedFriendCode, isCurrentlyDoingWPCheck := false
 global s4tPendingTradeables := []
 global deviceAccountXmlMap := {} ; prevents Create Bots + s4t making duplicate .xmls within a single run
 global ocrShinedust
@@ -95,6 +102,7 @@ injectMethod := false
 pauseToggle := false
 showStatus := true
 friended := false
+stopToggle := false
 dateChange := false
 jsonFileName := A_ScriptDir . "\..\json\Packs.json"
 IniRead, FriendID, %A_ScriptDir%\..\Settings.ini, UserSettings, FriendID
@@ -106,6 +114,8 @@ IniRead, Columns, %A_ScriptDir%\..\Settings.ini, UserSettings, Columns, 5
 IniRead, godPack, %A_ScriptDir%\..\Settings.ini, UserSettings, godPack, Continue
 IniRead, Instances, %A_ScriptDir%\..\Settings.ini, UserSettings, Instances, 1
 IniRead, defaultLanguage, %A_ScriptDir%\..\Settings.ini, UserSettings, defaultLanguage, Scale125
+IniRead, defaultBotLanguage, %A_ScriptDir%\..\Settings.ini, UserSettings, defaultBotLanguage, 1
+global stopDictionary := CreateGUITextByLanguage(defaultBotLanguage, "")
 IniRead, rowGap, %A_ScriptDir%\..\Settings.ini, UserSettings, rowGap, 100
 IniRead, swipeSpeed, %A_ScriptDir%\..\Settings.ini, UserSettings, swipeSpeed, 300
 IniRead, deleteMethod, %A_ScriptDir%\..\Settings.ini, UserSettings, deleteMethod, Create Bots (13P)
@@ -203,9 +213,6 @@ IniRead, openExtraPack, %A_ScriptDir%\..\Settings.ini, UserSettings, openExtraPa
 IniRead, verboseLogging, %A_ScriptDir%\..\Settings.ini, UserSettings, debugMode, 0
 IniRead, claimDailyMission, %A_ScriptDir%\..\Settings.ini, UserSettings, claimDailyMission, 0
 IniRead, wonderpickForEventMissions, %A_ScriptDir%\..\Settings.ini, UserSettings, wonderpickForEventMissions, 0
-IniRead, checkWPthanks, %A_ScriptDir%\..\Settings.ini, UserSettings, checkWPthanks, 0
-wpThanksSavedUsername := ""
-wpThanksSavedFriendCode := ""
 
 IniRead, ClaimGiftsPacks, %A_ScriptDir%\..\Settings.ini, UserSettings, ClaimGiftsPacks, 0
 
@@ -339,15 +346,22 @@ createAccountList(scriptName)
 
 rerolls_local := 0
 rerollStartTime_local := A_TickCount
+failSafe := A_TickCount  ; Initialize failSafe timer at script startup
 
 if(injectMethod && DeadCheck != 1) {
     loadedAccount := loadAccount()
     nukeAccount := false
+} else if(injectMethod && DeadCheck = 1) {
+    ; DeadCheck = 1: Start the Pokemon app for the stuck account (don't inject new account)
+    waitadb()
+    adbWriteRaw("am start -W -n jp.pokemon.pokemontcgp/com.unity3d.player.UnityPlayerActivity -f 0x10018000")
+    waitadb()
+    Sleep, 5000
 }
 
 clearMissionCache()
 
-if(!injectMethod || !loadedAccount)
+if(!injectMethod || (!loadedAccount && DeadCheck != 1))
     restartGameInstance("Initializing bot...", false)
 
 pToken := Gdip_Startup()
@@ -485,16 +499,6 @@ if(DeadCheck = 1 && deleteMethod != "Create Bots (13P)") {
 
             ; If we reach here, we have a valid loaded account for injection
             LogToFile("Successfully loaded account for injection: " . accountFileName)
-        }
-
-        ; Check if the account loaded is to check for wonderpick thanks (godpack testing)
-        if(injectMethod && loadedAccount) {
-            if(CheckWonderPickThanks()) {
-                ; WP thanks check was performed, mark account as used and continue to next iteration
-                MarkAccountAsUsed()
-                loadedAccount := false
-                continue  ; Skip to next iteration of main loop
-            }
         }
 
         ; Download friend IDs for injection methods when group reroll is enabled
@@ -1073,6 +1077,29 @@ FindOrLoseImage(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT", E
         }
     }
 
+    if (imageName = "Social") {
+        Path = %imagePath%MuMuFolder.png
+        pNeedle := GetNeedle(Path)
+        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 29, 145, 35, 151, searchVariation)
+        if (vRet = 1) {
+            restartGameInstance("Stuck at MuMuFolder...")
+        }
+    }
+
+    if (imageName = "Pack") {
+        Path = %imagePath%PokeGoldPack2.png
+        pNeedle := GetNeedle(Path)
+        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 75, 458, 83, 466, searchVariation)
+        if (vRet = 1) {
+            cantOpenMorePacks := 1
+            MarkAccountAsUsed()
+            loadedAccount := false
+            CreateStatusMessage("No more packs can be opened on this account. Restarting...")
+            Sleep, 1000
+            Reload
+        }
+    }
+
         ; Search for new privacy and TOS clearing popup; can be removed later patch
     if (imageName = "Points" || imageName = "Social" || imageName = "Country") {
         Path = %imagePath%newPrivacyTOSpopup.png
@@ -1083,6 +1110,7 @@ FindOrLoseImage(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT", E
             Sleep, 3000
             adbClick_wbb(142, 372)
             adbClick_wbb(142, 372)
+            adbClick_wbb(198, 375) ; Failsafe if this is actually Data Download
             Sleep, 2000
             adbClick_wbb(140, 336) ; Privacy Notice
             adbClick_wbb(140, 336) ; Privacy Notice
@@ -1111,6 +1139,22 @@ FindOrLoseImage(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT", E
             return confirmed
         }
 
+    }
+
+    if (imageName = "speedmodMenu" || imageName = "Points" || imageName = "Social" || imageName = "Country") {
+        Path = %imagePath%HardwareReqs.png
+        pNeedle := GetNeedle(Path)
+        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 29, 310, 36, 323, searchVariation)
+        if (vRet = 1) {
+            CreateStatusMessage("Clearing hardware requirements pop-up",,,, false)
+            Sleep, 3000
+            adbClick_wbb(199,370)
+            adbClick_wbb(199,370)
+            adbClick_wbb(199,370)
+            Sleep, 3000
+            Gdip_DisposeImage(pBitmap)
+            return confirmed
+        }
     }
 
     ; Handle 7/2025 trade news update popup, remove later patch
@@ -1184,58 +1228,11 @@ FindOrLoseImage(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT", E
         }
     }
 
-    Path = %imagePath%Error.png ; Search for communication error
-    pNeedle := GetNeedle(Path)
-    vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 120, 187, 155, 210, searchVariation)
-    if (vRet = 1) {
-        CreateStatusMessage("Error message in " . scriptName . ". Clicking retry...",,,, false)
-        Sleep, 3000
-        Gdip_DisposeImage(pBitmap)
-        pBitmap := from_window(WinExist(winTitle))
-
-        Gdip_SaveBitmapToFile(pBitmap, A_ScriptDir . "\debug_startup_error.png")
-
-        Path = %imagePath%StartupErrorX.png
-        CreateStatusMessage("Searching for: " . Path,,,, false)
-
-        if (FileExist(Path)) {
-            CreateStatusMessage("File exists, searching...",,,, false)
-        } else {
-            CreateStatusMessage("FILE NOT FOUND: " . Path,,,, false)
-        }
-
-        pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 124, 423, 155, 455, searchVariation)
-        CreateStatusMessage("Search result: " . vRet . " at coords: " . vPosXY,,,, false)
-
-        if (vRet != 1) {
-            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 50, 350, 250, 500, 80)
-            CreateStatusMessage("Wide search result: " . vRet . " at coords: " . vPosXY,,,, false)
-        }
-
-        if (vRet = 1) {
-            CreateStatusMessage("Start-up error; initiating slow reload...",,,, false)
-            Sleep, 2000
-            adbClick_wbb(19,125) ; platin, must remove speedmod for reload app
-            Sleep, 500
-            adbClick_wbb(26, 180) ; 1x
-            Sleep, 2000
-            adbClick_wbb(139, 440) ; click "X"
-            Sleep, 10000
-            Reload
-        } else {
-            ; assume it's communication error instead; click the "Retry" blue button
-            adbClick_wbb(82, 389)
-            Delay(5)
-            adbClick_wbb(139, 386)
-        }
-        Sleep, 5000 ; longer sleep time to allow reloading, previously 1000ms
-    }
 
     Path = %imagePath%App.png
     pNeedle := GetNeedle(Path)
     ; ImageSearch within the region
-    vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 48, 174, 54, 183, searchVariation)
+    vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 45, 174, 55, 185, searchVariation)
     if (vRet = 1) {
         restartGameInstance("Stuck at " . imageName . "...")
     }
@@ -1291,7 +1288,7 @@ FindOrLoseImage(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT", E
                 FileDelete, %loadedAccount%
                 IniWrite, 0, %A_ScriptDir%\%scriptName%.ini, UserSettings, DeadCheck
             }
-            LogToFile("Restarted game for instance " . scriptName . ". Reason: No save data found", "Restart.txt")
+            LogToFile("Restarted game. Reason: No save data found")
             Reload
         }
     }
@@ -1391,53 +1388,6 @@ FindImageAndClick(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT",
             }
         }
 
-        Path = %imagePath%Error.png ; Search for communication error
-        pNeedle := GetNeedle(Path)
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 120, 187, 155, 210, searchVariation)
-        if (vRet = 1) {
-            CreateStatusMessage("Error message in " . scriptName . ". Clicking retry...",,,, false)
-            Sleep, 3000
-            Gdip_DisposeImage(pBitmap)
-            pBitmap := from_window(WinExist(winTitle))
-
-            Gdip_SaveBitmapToFile(pBitmap, A_ScriptDir . "\debug_startup_error.png")
-
-            Path = %imagePath%StartupErrorX.png
-            CreateStatusMessage("Searching for: " . Path,,,, false)
-
-            if (FileExist(Path)) {
-                CreateStatusMessage("File exists, searching...",,,, false)
-            } else {
-                CreateStatusMessage("FILE NOT FOUND: " . Path,,,, false)
-            }
-
-            pNeedle := GetNeedle(Path)
-            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 124, 423, 155, 455, searchVariation)
-            CreateStatusMessage("Search result: " . vRet . " at coords: " . vPosXY,,,, false)
-
-            if (vRet != 1) {
-                vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 50, 350, 250, 500, 80)
-                CreateStatusMessage("Wide search result: " . vRet . " at coords: " . vPosXY,,,, false)
-            }
-
-            if (vRet = 1) {
-                CreateStatusMessage("Start-up error; initiating slow reload...",,,, false)
-                Sleep, 2000
-                adbClick_wbb(19,125) ; platin, must remove speedmod for reload app
-                Sleep, 500
-                adbClick_wbb(26, 180) ; 1x
-                Sleep, 2000
-                adbClick_wbb(139, 440) ; click the "X" button
-                Sleep, 10000
-                Reload ; reload the script to reset the instance
-            } else {
-                ; assume it's communication error instead; click the "Retry" blue button
-                adbClick_wbb(82, 389)
-                Delay(5)
-                adbClick_wbb(139, 386)
-            }
-            Sleep, 5000 ; longer sleep time to allow reloading, previously 1000ms
-        }
 
         if (imageName = "Social" || imageName = "CommunityShowcase" || imageName = "Add" || imageName = "Search") {
             Path = %imagePath%Tutorial.png
@@ -1445,6 +1395,29 @@ FindImageAndClick(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT",
             vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 111, 115, 167, 121, searchVariation)
             if (vRet = 1) {
                 adbClick_wbb(145, 451)
+            }
+        }
+
+        if (imageName = "Social") {
+            Path = %imagePath%MuMuFolder.png
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 29, 145, 35, 151, searchVariation)
+            if (vRet = 1) {
+                restartGameInstance("Stuck at MuMuFolder...")
+            }
+        }
+
+        if (imageName = "Pack") {
+            Path = %imagePath%PokeGoldPack2.png
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 75, 458, 83, 466, searchVariation)
+            if (vRet = 1) {
+                cantOpenMorePacks := 1
+                MarkAccountAsUsed()
+                loadedAccount := false
+                CreateStatusMessage("No more packs can be opened on this account. Restarting...")
+                Sleep, 1000
+                Reload
             }
         }
 
@@ -1458,6 +1431,7 @@ FindImageAndClick(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT",
                 Sleep, 1000
                 adbClick_wbb(142, 372)
                 adbClick_wbb(142, 372)
+                adbClick_wbb(198, 375) ; Failsafe if this is actually Data Download
                 Sleep, 2000
                 adbClick_wbb(140, 336) ; Privacy Notice
                 adbClick_wbb(140, 336) ; Privacy Notice
@@ -1486,6 +1460,22 @@ FindImageAndClick(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT",
                 return confirmed
             }
 
+        }
+
+        if (imageName = "speedmodMenu" || imageName = "Points" || imageName = "Social" || imageName = "Country") {
+            Path = %imagePath%HardwareReqs.png
+            pNeedle := GetNeedle(Path)
+            vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 29, 310, 36, 323, searchVariation)
+            if (vRet = 1) {
+                CreateStatusMessage("Clearing hardware requirements pop-up",,,, false)
+                Sleep, 3000
+                adbClick_wbb(199,370)
+                adbClick_wbb(199,370)
+                adbClick_wbb(199,370)
+                Sleep, 3000
+                Gdip_DisposeImage(pBitmap)
+                return confirmed
+            }
         }
 
         ; Search for 7/2025 trade news update popup; can be removed later patch
@@ -1542,7 +1532,7 @@ FindImageAndClick(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT",
         Path = %imagePath%App.png
         pNeedle := GetNeedle(Path)
         ; ImageSearch within the region
-        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 48, 174, 54, 183, searchVariation)
+        vRet := Gdip_ImageSearch_wbb(pBitmap, pNeedle, vPosXY, 45, 174, 55, 185, searchVariation)
         if (vRet = 1) {
             restartGameInstance("Stuck at " . imageName . "...")
         }
@@ -1563,7 +1553,7 @@ FindImageAndClick(X1, Y1, X2, Y2, searchVariation := "", imageName := "DEFAULT",
                     FileDelete, %loadedAccount%
                     IniWrite, 0, %A_ScriptDir%\%scriptName%.ini, UserSettings, DeadCheck
                 }
-                LogToFile("Restarted game for instance " . scriptName . ". Reason: No save data found", "Restart.txt")
+                LogToFile("Restarted game. Reason: No save data found")
                 Reload
             }
         }
@@ -1716,66 +1706,22 @@ DirectlyPositionWindow() {
 
 restartGameInstance(reason, RL := true) {
     global friended, scriptName, packsThisRun, injectMethod, loadedAccount, DeadCheck, starCount, packsInPool, openPack, invalid, accountFile, username, stopToggle, accountFileName
-    global isCurrentlyDoingWPCheck
+    global winTitle
+    isStuck := InStr(reason, "Stuck")
 
-    ; Check if we're currently doing a WP thanks check (use the proper flag)
-    if (isCurrentlyDoingWPCheck) {
-        CreateStatusMessage("WP Thanks check encountered issue: " . reason . ". Removing W flag and continuing...",,,, false)
-        LogToFile("WP Thanks check encountered issue (" . reason . ") for account: " . accountFileName . ". Removing W flag.")
-
-        ; Remove W flag and send warning
-        RemoveWFlagFromAccount()
-        SendWPStuckWarning(reason)
-
-        ; Clear the flag since we're exiting the WP check
-        isCurrentlyDoingWPCheck := false
-
-        ; Don't deadcheck (which would remove friends of potential godpacks) - just mark account as used and continue
-        if (injectMethod && loadedAccount) {
-            MarkAccountAsUsed()
-            loadedAccount := false
-        }
-
-        ; Restart without deadcheck (CLEAN way)
-        waitadb()
-
-        adbWriteRaw("input keyevent 3")
-        waitadb()
-
-        adbWriteRaw("am stop-app jp.pokemon.pokemontcgp")
-        Sleep, 500
-        adbWriteRaw("cmd activity stop-app jp.pokemon.pokemontcgp")
-        Sleep, 500
-
-        adbWriteRaw("am kill jp.pokemon.pokemontcgp")
-        Sleep, 500
-        adbWriteRaw("am force-stop jp.pokemon.pokemontcgp")
-        Sleep, 500
-
-        adbWriteRaw("sync")
-        Sleep, 3000
-
-        clearMissionCache()
-
-        waitadb()
-
-        adbWriteRaw("monkey -p jp.pokemon.pokemontcgp -c android.intent.category.LAUNCHER 1")
-        waitadb()
-        Sleep, 5000
-
-        return ; Exit early to continue with next account
-    }
-
-    ; Original restartGameInstance logic for non-WP checks
     if (Debug)
         CreateStatusMessage("Restarting game reason:`n" . reason)
-    else if (InStr(reason, "Stuck"))
-        CreateStatusMessage("Stuck! Restarting game...",,,, false)
+    else if (isStuck)
+        CreateStatusMessage("Stuck! Restarting MuMu...",,,, false)
     else
         CreateStatusMessage("Restarting game...",,,, false)
 
+    ; Log to instance-specific log file
+    if (isStuck)
+        LogToFile("STUCK DETECTED - Reason: " . reason . " | loadedAccount: " . (loadedAccount ? "true" : "false") . " | injectMethod: " . (injectMethod ? "true" : "false") . " | accountFileName: " . accountFileName)
+
     if (RL = "GodPack") {
-        LogToFile("Restarted game for instance " . scriptName . ". Reason: " reason, "Restart.txt")
+        LogToFile("Restarted game. Reason: " reason)
         IniWrite, 0, %A_ScriptDir%\%scriptName%.ini, UserSettings, DeadCheck
         AppendToJsonFile(packsThisRun)
 
@@ -1785,49 +1731,47 @@ restartGameInstance(reason, RL := true) {
         }
 
         Reload
+    } else if (isStuck) {
+        ; Only restart MuMu when stuck - this is the nuclear option
+        clearMissionCache()
+
+        ; Kill the entire MuMu instance
+        CreateStatusMessage("Restarting MuMu instance...",,,, false)
+        LogToFile("Killing MuMu instance " . winTitle . " due to: " . reason)
+        killInstance(winTitle)
+        Sleep, 2000
+
+        ; Reset injection cycle count since we're doing a full MuMu restart
+        IniWrite, 0, %A_ScriptDir%\%winTitle%.ini, Metrics, InjectionCycleCount
+
+        ; Launch new MuMu instance
+        launchInstance(winTitle)
+        Sleep, 5000  ; Give MuMu a head start before script reload
+
+        AppendToJsonFile(packsThisRun)
+        LogToFile("Restarted MuMu instance. Reason: " reason)
+
+        if (stopToggle) {
+            CreateStatusMessage("Stopping...",,,, false)
+            ExitApp
+        }
+
+        Reload  ; Clean restart handles ADB reconnection automatically
     } else {
-        waitadb() ; Properly detach Unity from foreground 
-        adbWriteRaw("input keyevent 3") ; HOME 
-        Sleep, 500 
-        
-        ; Tell ActivityTaskManager to destroy the task + surface 
-        adbWriteRaw("am stop-app jp.pokemon.pokemontcgp") 
-        Sleep, 500 
-        adbWriteRaw("cmd activity stop-app jp.pokemon.pokemontcgp") 
-        Sleep, 500 
-        
-        ; Kill remaining native parts 
-        adbWriteRaw("am kill jp.pokemon.pokemontcgp") 
-        Sleep, 500 
-        adbWriteRaw("am force-stop jp.pokemon.pokemontcgp") 
-        Sleep, 500 
-        
-        ; Force MuMu/Android to flush surface & binder state 
-        adbWriteRaw("sync") 
-        Sleep, 3000 
-        
-        clearMissionCache() 
-        if (!RL && DeadCheck = 0) { 
-            adbWriteRaw("rm /data/data/jp.pokemon.pokemontcgp/shared_prefs/deviceAccount:.xml") ; delete account data 
-        } 
-        
-        waitadb() 
-        
-        ; Launch like a real user tap (NEW task, NEW surface) 
-        adbWriteRaw("monkey -p jp.pokemon.pokemontcgp -c android.intent.category.LAUNCHER 1") 
-        waitadb() 
-        Sleep, 6000
+        ; Non-stuck restart: just restart the Pokemon app, not the whole MuMu instance
+        adbWriteRaw("am force-stop jp.pokemon.pokemontcgp")
+        Sleep, 3000
+
+        clearMissionCache()
+        if (!RL && DeadCheck = 0) {
+            adbWriteRaw("rm /data/data/jp.pokemon.pokemontcgp/shared_prefs/deviceAccount:.xml") ; delete account data
+        }
+
+        adbWriteRaw("am start -n jp.pokemon.pokemontcgp/com.unity3d.player.UnityPlayerActivity")
+        Sleep, 3000
 
         if (RL) {
-            AppendToJsonFile(packsThisRun)
-            if(!injectMethod) {
-                if (menuDeleteStart()) {
-                    IniWrite, 0, %A_ScriptDir%\%scriptName%.ini, UserSettings, DeadCheck
-                    logMessage := "\n" . username . "\n[" . (starCount ? starCount : "0") . "/5][" . (packsInPool ? packsInPool : 0) . "P][" . openPack . "] " . (invalid ? invalid . " God Pack" : "Some sort of pack") . " found in instance: " . scriptName . "\nFile name: " . accountFile . "\nGot stuck doing something. Check Log_" . scriptName . ".txt."
-                    LogToFile(Trim(StrReplace(logMessage, "\n", " ")))
-                }
-            }
-            LogToFile("Restarted game for instance " . scriptName . ". Reason: " reason, "Restart.txt")
+            LogToFile("Restarted game. Reason: " reason)
 
             if (stopToggle) {
                 CreateStatusMessage("Stopping...",,,, false)
@@ -2289,9 +2233,9 @@ Screenshot_dev(fileType := "Dev",subDir := "") {
         Y3 -= 31
 
         ; Convert window coordinates to device/OCR coordinates
-        ; Device resolution: 540x960, Window resolution: 277 x 489, Y offset: 49
+        ; Device resolution: 540x960, Window resolution: 277x489, Y offset: 44
         OCR_X1 := Round(X1 * 540 / 277)
-        OCR_Y1 := Round((Y1 - 49) * 960 / 489)
+        OCR_Y1 := Round((Y1 - 44) * 960 / 489)
         OCR_W := Round(W * 540 / 277)
         OCR_H := Round(H * 960 / 489)
         OCR_X2 := OCR_X1 + OCR_W
@@ -2305,8 +2249,8 @@ Screenshot_dev(fileType := "Dev",subDir := "") {
         (LTrim
             ctrl+C to copy:
             FindOrLoseImage(%X1%, %Y1%, %X2%, %Y2%, , "%fileName%", 0, failSafeTime)
-            FindImageAndClick(%X1%, %Y1%, %X2%, %Y2%, , "%fileName%", %X3%, %Y3%, sleepTime)
-            adbClick_wbb(%X3%, %Y3%)
+            FindImageAndClick(%X1%, %Y1%, %X2%, %Y2%, , "%fileName%", %X3%, %outY3%, sleepTime)
+            adbClick_wbb(%X3%, %outY3%)
             OCR coordinates: %OCR_X3%, %OCR_Y3%, %OCR_W%, %OCR_H%
         )
     }
@@ -2398,13 +2342,235 @@ TestScript:
     ToggleTestScript()
 return
 
+; ToggleStop - For GUI button clicks (stops only THIS instance)
 ToggleStop() {
+    global stopToggle, friended, stopDictionary, winTitle
+
+    ; Check if user has a saved preference for single instance stop
+    settingsPath := A_ScriptDir . "\..\Settings.ini"
+    IniRead, savedStopPreferenceSingle, %settingsPath%, UserSettings, stopPreferenceSingle, none
+
+    if (savedStopPreferenceSingle != "none" && savedStopPreferenceSingle != "ERROR" && savedStopPreferenceSingle != "") {
+        ; Execute the saved preference directly without showing popup
+        if (savedStopPreferenceSingle = "immediate") {
+            ExitApp
+        } else if (savedStopPreferenceSingle = "wait_end") {
+            stopToggle := true
+            if (!friended)
+                ExitApp
+            else
+                CreateStatusMessage("Stopping script at the end of the run...",,,, false)
+        }
+        return
+    }
+
+    ; Get localized strings
+    title := stopDictionary["stop_confirm_title"]
+    btnImmediate := stopDictionary["stop_immediately"]
+    btnWaitEnd := stopDictionary["stop_wait_end"]
+    chkRemember := stopDictionary["stop_remember_preference"]
+
+    ; Create confirmation GUI with checkbox
+    Gui, StopConfirm:New, +AlwaysOnTop +Owner
+    Gui, StopConfirm:Add, Text, x20 y15 w260 Center, % title
+    Gui, StopConfirm:Add, Button, x20 y45 w130 h30 gStopImmediatelySingle, % btnImmediate
+    Gui, StopConfirm:Add, Button, x160 y45 w130 h30 gStopWaitEndSingle, % btnWaitEnd
+    Gui, StopConfirm:Add, Checkbox, x20 y85 w260 vRememberStopPreferenceSingle, % chkRemember
+    Gui, StopConfirm:Show, w310 h115, % title
+    return
+}
+
+; ToggleStopAll - For Shift+F7 hotkey (stops ALL instances, only called from instance 1)
+ToggleStopAll() {
+    global stopDictionary
+
+    ; Check if user has a saved preference
+    settingsPath := A_ScriptDir . "\..\Settings.ini"
+    IniRead, savedStopPreference, %settingsPath%, UserSettings, stopPreference, none
+
+    if (savedStopPreference != "none" && savedStopPreference != "ERROR" && savedStopPreference != "") {
+        ; Execute the saved preference directly without showing popup
+        if (savedStopPreference = "immediate") {
+            StopAllInstances()
+        } else if (savedStopPreference = "wait_end") {
+            global stopToggle
+            SignalStopAfterRun()
+            stopToggle := true
+            CreateStatusMessage("Stopping script at the end of the run...",,,, false)
+        } else if (savedStopPreference = "kill_mumu") {
+            global Instances
+            Loop, %Instances% {
+                killInstance(A_Index)
+                Sleep, 500
+            }
+            Sleep, 1000
+            StopAllInstances()
+        }
+        return
+    }
+
+    ; Get localized strings
+    title := stopDictionary["stop_confirm_title"]
+    btnImmediate := stopDictionary["stop_immediately"]
+    btnWaitEnd := stopDictionary["stop_wait_end"]
+    btnKillMumu := stopDictionary["stop_kill_mumu"]
+    chkRemember := stopDictionary["stop_remember_preference"]
+
+    ; Create confirmation GUI with checkbox
+    Gui, StopConfirmAll:New, +AlwaysOnTop +Owner
+    Gui, StopConfirmAll:Add, Text, x20 y15 w400 Center, % title
+    Gui, StopConfirmAll:Add, Button, x20 y45 w130 h30 gStopImmediatelyAll, % btnImmediate
+    Gui, StopConfirmAll:Add, Button, x160 y45 w130 h30 gStopWaitEndAll, % btnWaitEnd
+    Gui, StopConfirmAll:Add, Button, x300 y45 w130 h30 gStopAndKillMuMuAll, % btnKillMumu
+    Gui, StopConfirmAll:Add, Checkbox, x20 y85 w400 vRememberStopPreference, % chkRemember
+    Gui, StopConfirmAll:Show, w450 h115, % title
+    return
+}
+
+; === Single instance stop handlers (GUI button) ===
+StopImmediatelySingle:
+    Gui, StopConfirm:Submit, NoHide
+    if (RememberStopPreferenceSingle) {
+        settingsPath := A_ScriptDir . "\..\Settings.ini"
+        IniWrite, immediate, %settingsPath%, UserSettings, stopPreferenceSingle
+    }
+    Gui, StopConfirm:Destroy
+    ExitApp
+return
+
+StopWaitEndSingle:
     global stopToggle, friended
+    Gui, StopConfirm:Submit, NoHide
+    if (RememberStopPreferenceSingle) {
+        settingsPath := A_ScriptDir . "\..\Settings.ini"
+        IniWrite, wait_end, %settingsPath%, UserSettings, stopPreferenceSingle
+    }
+    Gui, StopConfirm:Destroy
     stopToggle := true
     if (!friended)
         ExitApp
     else
         CreateStatusMessage("Stopping script at the end of the run...",,,, false)
+return
+
+StopConfirmGuiClose:
+StopConfirmGuiEscape:
+    Gui, StopConfirm:Destroy
+return
+
+; === All instances stop handlers (Shift+F7 from instance 1) ===
+StopImmediatelyAll:
+    global RememberStopPreference
+    Gui, StopConfirmAll:Submit, NoHide
+    if (RememberStopPreference) {
+        settingsPath := A_ScriptDir . "\..\Settings.ini"
+        IniWrite, immediate, %settingsPath%, UserSettings, stopPreference
+    }
+    Gui, StopConfirmAll:Destroy
+    StopAllInstances()
+return
+
+StopWaitEndAll:
+    global stopToggle, RememberStopPreference
+    Gui, StopConfirmAll:Submit, NoHide
+    if (RememberStopPreference) {
+        settingsPath := A_ScriptDir . "\..\Settings.ini"
+        IniWrite, wait_end, %settingsPath%, UserSettings, stopPreference
+    }
+    Gui, StopConfirmAll:Destroy
+    ; Signal all other instances to stop after their current run
+    SignalStopAfterRun()
+    stopToggle := true
+    CreateStatusMessage("Stopping script at the end of the run...",,,, false)
+return
+
+StopAndKillMuMuAll:
+    global Instances, RememberStopPreference
+    Gui, StopConfirmAll:Submit, NoHide
+    if (RememberStopPreference) {
+        settingsPath := A_ScriptDir . "\..\Settings.ini"
+        IniWrite, kill_mumu, %settingsPath%, UserSettings, stopPreference
+    }
+    Gui, StopConfirmAll:Destroy
+    ; Kill ALL MuMu instances before calling StopAllInstances (which does ExitApp)
+    Loop, %Instances% {
+        killInstance(A_Index)
+        Sleep, 500
+    }
+    Sleep, 1000
+    StopAllInstances()
+return
+
+StopConfirmAllGuiClose:
+StopConfirmAllGuiEscape:
+    Gui, StopConfirmAll:Destroy
+return
+
+; Kill all script instances immediately
+StopAllInstances() {
+    global Instances
+
+    DetectHiddenWindows, On
+    SetTitleMatchMode, 2  ; Match if title CONTAINS the string (needed for full paths)
+
+    ; Close Main.ahk first
+    WinClose, Main.ahk ahk_class AutoHotkey
+
+    ; Close all numbered instances (2 through Instances, skip 1 which is us)
+    Loop, %Instances% {
+        if (A_Index != 1) {
+            WinClose, % A_Index ".ahk ahk_class AutoHotkey"
+        }
+    }
+
+    ; Finally exit this instance
+    ExitApp
+}
+
+; Cleanup function called when script exits - ensures ADB shell is properly closed
+; DISABLED - was causing Reload delays due to blocking ADB shell communication
+; CleanupOnExit(ExitReason, ExitCode) {
+;     global adbShell
+;
+;     ; Close ADB shell if it exists to prevent hanging connections
+;     try {
+;         if (IsObject(adbShell) && adbShell.Status = 0) {
+;             adbShell.StdIn.WriteLine("exit")
+;             Sleep, 100
+;             adbShell.Terminate()
+;         }
+;     }
+;     adbShell := ""
+;
+;     return 0  ; Allow exit to proceed
+; }
+
+; Message handler for "stop after run" signal from instance 1
+OnStopAfterRunMessage(wParam, lParam, msg, hwnd) {
+    global stopToggle
+    stopToggle := true
+    CreateStatusMessage("Stopping script at the end of the run...",,,, false)
+    return 0
+}
+
+; Send "stop after run" message to all other script instances
+SignalStopAfterRun() {
+    global Instances
+
+    DetectHiddenWindows, On
+    SetTitleMatchMode, 2
+
+    ; Send message to all numbered instances (2 through Instances)
+    Loop, %Instances% {
+        if (A_Index != 1) {
+            ; Find the window for this instance
+            WinGet, targetHwnd, ID, % A_Index ".ahk ahk_class AutoHotkey"
+            if (targetHwnd) {
+                ; Send custom message (0x500) to signal "stop after run"
+                PostMessage, 0x500, 0, 0,, ahk_id %targetHwnd%
+            }
+        }
+    }
 }
 
 ToggleTestScript() {
@@ -2478,7 +2644,13 @@ Return
 ; ===== HOTKEYS =====
 ~+F5::Reload
 ~+F6::Pause
-~+F7::ToggleStop()
+~+F7::
+    ; Only instance 1 handles Shift+F7 - shows popup and controls all instances
+    ; Other instances do nothing here; they receive commands via PostMessage from instance 1
+    if (scriptName = "1") {
+        ToggleStopAll()
+    }
+return
 ~+F8::ToggleDevMode()
 ;~+F8::ToggleStatusMessages()
 ;~F9::restartGameInstance("F9")
@@ -3160,9 +3332,9 @@ SelectPack(HG := false) {
     inselectexpansionscreen := 0
 
     packy := HomeScreenAllPackY
-    if (openPack == "CrimsonBlaze") {
+    if (openPack == "MegaBlaziken") {
         packx := LeftPackX
-    } else if (openPack == "MegaBlaziken") {
+    } else if (openPack == "CrimsonBlaze") {
         packx := RightPackX
     } else { ; do not set this to a specific if openPack == "something" as all packs need to reference MiddlePackX as pack position.
         packx := MiddlePackX
@@ -3537,7 +3709,9 @@ PackOpening() {
         CreateStatusMessage("Waiting for Pack`n(" . failSafeTime . "/45 seconds)")
         if(failSafeTime > 45){
             RemoveFriends()
-            IniWrite, 1, %A_ScriptDir%\%scriptName%.ini, UserSettings, DeadCheck
+            if(injectMethod && loadedAccount && friended) {
+                IniWrite, 1, %A_ScriptDir%\%scriptName%.ini, UserSettings, DeadCheck
+            }
             restartGameInstance("Stuck at Pack")
         }
     }

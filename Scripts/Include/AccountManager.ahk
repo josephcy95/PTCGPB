@@ -23,6 +23,7 @@ loadAccount() {
     global accountHasPackInTesting, resetSpecialMissionsDone, stopToggle, winTitle, loadDir
     global accountFileName, accountOpenPacks, accountFileNameTmp, accountFileNameOrig, accountHasPackInfo
     global currentLoadedAccountIndex, adbShell, adbPath, adbPort
+    global deleteMethod, folderPath
 
     beginnerMissionsDone := 0
     soloBattleMissionDone := 0
@@ -131,6 +132,32 @@ loadAccount() {
     adbWriteRaw("sync")
     Sleep, 3000
 
+    ; Injection cycle restart logic for "Inject 13P+" and "Inject Wonderpick 96P+" to mitigate MuMu memory leak / PTCGP incompatibility issues.
+    ; Read auto-restart settings from PTCGPB settings
+    IniRead, autoRestartMumu, %A_ScriptDir%\..\Settings.ini, UserSettings, autoRestartMumu, 1
+    IniRead, runsBeforeRestart, %A_ScriptDir%\..\Settings.ini, UserSettings, runsBeforeRestart, 13
+
+    if (autoRestartMumu = 1 && runsBeforeRestart > 0 && (deleteMethod = "Inject 13P+" || deleteMethod = "Inject Wonderpick 96P+")) {
+        IniRead, InjectionCycleCount, %A_ScriptDir%\%winTitle%.ini, Metrics, InjectionCycleCount, 0
+        InjectionCycleCount := InjectionCycleCount + 1
+        IniWrite, %InjectionCycleCount%, %A_ScriptDir%\%winTitle%.ini, Metrics, InjectionCycleCount
+
+        if (InjectionCycleCount >= runsBeforeRestart) {
+            InjectionCycleCount := 0
+            IniWrite, %InjectionCycleCount%, %A_ScriptDir%\%winTitle%.ini, Metrics, InjectionCycleCount
+
+            CreateStatusMessage("Restarting MuMu instance (" . runsBeforeRestart . " cycle)",,,, false)
+            LogToFile("Restarting MuMu instance after " . runsBeforeRestart . " injection cycles - full script reload")
+
+            killInstance(winTitle)
+            Sleep, 2000
+            launchInstance(winTitle)
+            Sleep, 5000  ; Give MuMu a head start before script reload
+
+            Reload  ; Clean restart handles ADB reconnection automatically
+        }
+    }
+
     waitadb()
     RunWait, % adbPath . " -s 127.0.0.1:" . adbPort . " push " . loadFile . " /sdcard/deviceAccount.xml",, Hide
     waitadb()
@@ -139,7 +166,7 @@ loadAccount() {
     adbWriteRaw("rm /sdcard/deviceAccount.xml")
     waitadb()
     ; Reliably restart the app: Wait for launch, and start in a clean, new task without animation.
-    adbWriteRaw("monkey -p jp.pokemon.pokemontcgp -c android.intent.category.LAUNCHER 1")
+    adbWriteRaw("am start -W -n jp.pokemon.pokemontcgp/com.unity3d.player.UnityPlayerActivity -f 0x10018000")
     waitadb()
     Sleep, 6000   ; Reduced from 1000
     ; Parse account filename for pack info (unchanged)
@@ -196,7 +223,7 @@ MarkAccountAsUsed() {
 ;-------------------------------------------------------------------------------
 ; saveAccount - Save current account from game to XML file
 ;-------------------------------------------------------------------------------
-saveAccount(file := "Valid", ByRef filePath := "", packDetails := "", addWFlag := false) {
+saveAccount(file := "Valid", ByRef filePath := "", packDetails := "") {
     global accountOpenPacks, beginnerMissionsDone, soloBattleMissionDone, intermediateMissionsDone
     global specialMissionsDone, accountHasPackInTesting, winTitle, packsInPool, scriptName
     global adbShell, adbPath, adbPort, Debug
@@ -216,8 +243,6 @@ saveAccount(file := "Valid", ByRef filePath := "", packDetails := "", addWFlag :
             metadata .= "X"
         if(accountHasPackInTesting)
             metadata .= "T"
-        if(addWFlag)
-            metadata .= "W"
 
         saveDir := A_ScriptDir "\..\Accounts\Saved\" . winTitle
 
@@ -227,15 +252,8 @@ saveAccount(file := "Valid", ByRef filePath := "", packDetails := "", addWFlag :
         filePath := saveDir . "\" . xmlFile
 
     } else if (file = "Valid" || file = "Invalid") {
-        metadata := ""
-        if(addWFlag)
-            metadata .= "W"
-
         saveDir := A_ScriptDir "\..\Accounts\GodPacks\"
-        xmlFile := A_Now . "_" . winTitle . "_" . file . "_" . packsInPool . "_packs"
-        if(metadata != "")
-            xmlFile .= "(" . metadata . ")"
-        xmlFile .= ".xml"
+        xmlFile := A_Now . "_" . winTitle . "_" . file . "_" . packsInPool . "_packs.xml"
         filePath := saveDir . xmlFile
 
     } else if (file = "Tradeable") {
@@ -245,15 +263,8 @@ saveAccount(file := "Valid", ByRef filePath := "", packDetails := "", addWFlag :
         filePath := saveDir . xmlFile
 
     } else {
-        metadata := ""
-        if(addWFlag)
-            metadata .= "W"
-
         saveDir := A_ScriptDir "\..\Accounts\SpecificCards\"
-        xmlFile := A_Now . "_" . winTitle . "_" . file . "_" . packsInPool . "_packs"
-        if(metadata != "")
-            xmlFile .= "(" . metadata . ")"
-        xmlFile .= ".xml"
+        xmlFile := A_Now . "_" . winTitle . "_" . file . "_" . packsInPool . "_packs.xml"
         filePath := saveDir . xmlFile
     }
 
@@ -561,6 +572,145 @@ ClearDeviceAccountXmlMap() {
 }
 
 ;-------------------------------------------------------------------------------
+; killInstance - Kill MuMu instance by instance number
+;-------------------------------------------------------------------------------
+killInstance(instanceNum := "") {
+    killed := 0
+
+    pID := checkInstance(instanceNum)
+    if pID {
+        Process, Close, %pID%
+        killed := killed + 1
+    }
+
+    return killed
+}
+
+;-------------------------------------------------------------------------------
+; checkInstance - Check if MuMu instance exists and get its process ID
+;-------------------------------------------------------------------------------
+checkInstance(instanceNum := "") {
+    ret := WinExist(instanceNum)
+    if(ret) {
+        WinGet, temp_pid, PID, ahk_id %ret%
+        return temp_pid
+    }
+
+    return ""
+}
+
+;-------------------------------------------------------------------------------
+; launchInstance - Launch MuMu instance by instance number
+;-------------------------------------------------------------------------------
+launchInstance(instanceNum := "") {
+    global folderPath
+
+    ; Determine MuMu folder path
+    mumuFolder := folderPath . "\MuMuPlayerGlobal-12.0"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMu Player 12"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMuPlayer"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMuPlayer-12"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMuPlayer12"
+
+    if(instanceNum != "") {
+        mumuNum := getMumuInstanceNumFromPlayerName(instanceNum)
+        if(mumuNum != "") {
+            mumuExe := mumuFolder . "\shell\MuMuPlayer.exe"
+            if !FileExist(mumuExe)
+                mumuExe := mumuFolder . "\nx_main\MuMuNxMain.exe"
+            Run_(mumuExe, "-v " . mumuNum)
+        }
+    }
+}
+
+;-------------------------------------------------------------------------------
+; getMumuInstanceNumFromPlayerName - Get MuMu instance number from player name
+;-------------------------------------------------------------------------------
+getMumuInstanceNumFromPlayerName(scriptName := "") {
+    global folderPath
+
+    if(scriptName == "") {
+        return ""
+    }
+
+    ; Determine MuMu folder path
+    mumuFolder := folderPath . "\MuMuPlayerGlobal-12.0"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMu Player 12"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMuPlayer"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMuPlayer-12"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMuPlayer12"
+
+    ; Loop through all directories in the base folder
+    Loop, Files, %mumuFolder%\vms\*, D
+    {
+        folder := A_LoopFileFullPath
+        configFolder := folder "\configs"
+
+        IfExist, %configFolder%
+        {
+            extraConfigFile := configFolder "\extra_config.json"
+
+            IfExist, %extraConfigFile%
+            {
+                FileRead, extraConfigContent, %extraConfigFile%
+                RegExMatch(extraConfigContent, """playerName"":\s*""(.*?)""", playerName)
+                if(playerName1 == scriptName) {
+                    RegExMatch(A_LoopFileFullPath, "[^-]+$", mumuNum)
+                    return mumuNum
+                }
+            }
+        }
+    }
+}
+
+;-------------------------------------------------------------------------------
+; Run_ - Run as non-administrator (MuMu has issues running as admin)
+;-------------------------------------------------------------------------------
+Run_(target, args:="", workdir:="") {
+    try
+        ShellRun(target, args, workdir)
+    catch e
+        Run % args="" ? target : target " " args, % workdir
+}
+
+;-------------------------------------------------------------------------------
+; ShellRun - Helper function for Run_ to execute as non-admin
+;-------------------------------------------------------------------------------
+ShellRun(prms*) {
+    shellWindows := ComObjCreate("Shell.Application").Windows
+    VarSetCapacity(_hwnd, 4, 0)
+    desktop := shellWindows.FindWindowSW(0, "", 8, ComObj(0x4003, &_hwnd), 1)
+
+    if ptlb := ComObjQuery(desktop
+        , "{4C96BE40-915C-11CF-99D3-00AA004AE837}"
+        , "{000214E2-0000-0000-C000-000000000046}")
+    {
+        if DllCall(NumGet(NumGet(ptlb+0)+15*A_PtrSize), "ptr", ptlb, "ptr*", psv:=0) = 0
+        {
+            VarSetCapacity(IID_IDispatch, 16)
+            NumPut(0x46000000000000C0, NumPut(0x20400, IID_IDispatch, "int64"), "int64")
+
+            DllCall(NumGet(NumGet(psv+0)+15*A_PtrSize), "ptr", psv
+                , "uint", 0, "ptr", &IID_IDispatch, "ptr*", pdisp:=0)
+
+            shell := ComObj(9,pdisp,1).Application
+            shell.ShellExecute(prms*)
+
+            ObjRelease(psv)
+        }
+        ObjRelease(ptlb)
+    }
+}
+
+;-------------------------------------------------------------------------------
 ; UpdateSavedXml - Update saved XML file with current game state
 ;-------------------------------------------------------------------------------
 UpdateSavedXml(xmlPath) {
@@ -596,7 +746,7 @@ UpdateSavedXml(xmlPath) {
 ; Note: This is a large function (300+ lines) included in full for completeness
 ;-------------------------------------------------------------------------------
 CreateAccountList(instance) {
-    global injectSortMethod, deleteMethod, winTitle, verboseLogging, checkWPthanks
+    global injectSortMethod, deleteMethod, winTitle, verboseLogging
 
     ; Clean up stale used accounts first
     CleanupUsedAccounts()
@@ -720,46 +870,10 @@ CreateAccountList(instance) {
     fileNames := []
     fileTimes := []
     packCounts := []
-    wFlagFiles := []  ; Separate array for W flag files
 
-    ; First pass: gather W flag files that are ready for checking
-    if (checkWPthanks = 1 && deleteMethod = "Inject Wonderpick 96P+") {
-        Loop, %saveDir%\*.xml {
-            if (InStr(A_LoopFileName, "W")) {
-                xml := saveDir . "\" . A_LoopFileName
-
-                ; Get file modification time
-                modTime := ""
-                FileGetTime, modTime, %xml%, M
-
-                ; Calculate minutes difference
-                minutesDiff := A_Now
-                timeVar := modTime
-                EnvSub, minutesDiff, %timeVar%, Minutes
-
-                if (InStr(A_LoopFileName, "W2")) {
-                    ; Second check - wait 12 hours (720 minutes)
-                    if (minutesDiff >= 720) {
-                        wFlagFiles.Push(A_LoopFileName)
-                    }
-                } else {
-                    ; First check - wait 30 minutes
-                    if (minutesDiff >= 30) {
-                        wFlagFiles.Push(A_LoopFileName)
-                    }
-                }
-            }
-        }
-    }
-
-    ; Second pass: gather all other eligible files with their timestamps
+    ; Gather all eligible files with their timestamps
     Loop, %saveDir%\*.xml {
         xml := saveDir . "\" . A_LoopFileName
-
-        ; Skip W flag files as they're handled separately
-        if (InStr(A_LoopFileName, "W")) {
-            continue
-        }
 
         ; Skip if this account was recently used (unless we just cleared the log)
         if (usedAccounts.HasKey(A_LoopFileName)) {
@@ -785,8 +899,7 @@ CreateAccountList(instance) {
         }
 
         ; Check if account has "T" flag and needs more time (always 5 days)
-        ; BUT skip this check if account also has "W" flag (W takes precedence)
-        if(InStr(A_LoopFileName, "(") && InStr(A_LoopFileName, "T") && !InStr(A_LoopFileName, "W")) {
+        if(HasFlagInMetadata(A_LoopFileName, "T")) {
             if(hoursDiff < 5*24) {  ; Always 5 days for T-flagged accounts
                 ; if (verboseLogging)
                     ; LogToFile("Skipping account with T flag (testing): " . A_LoopFileName . " (age: " . hoursDiff . " hours, needs 5 days)")
@@ -823,12 +936,11 @@ CreateAccountList(instance) {
 
     ; Log counts
     totalEligible := (fileNames.MaxIndex() ? fileNames.MaxIndex() : 0)
-    totalWFlags := (wFlagFiles.MaxIndex() ? wFlagFiles.MaxIndex() : 0)
 
     if (forceRegeneration) {
-        LogToFile("FORCED REGENERATION: Found " . totalEligible . " eligible files + " . totalWFlags . " W flag files (cleared used accounts, maintained strict age requirements)")
+        LogToFile("FORCED REGENERATION: Found " . totalEligible . " eligible files (cleared used accounts, maintained strict age requirements)")
     } else {
-        LogToFile("Found " . totalEligible . " eligible files + " . totalWFlags . " W flag files (>= 24 hours old, not recently used, packs: " . minPacks . "-" . maxPacks . ")")
+        LogToFile("Found " . totalEligible . " eligible files (>= 24 hours old, not recently used, packs: " . minPacks . "-" . maxPacks . ")")
     }
 
     ; Sort regular files based on selected method
@@ -891,12 +1003,7 @@ CreateAccountList(instance) {
     ; Write sorted files to list.txt and list_current.txt
     listContent := ""
 
-    ; Add W flag files at the beginning for priority processing
-    Loop, % wFlagFiles.MaxIndex() {
-        listContent .= wFlagFiles[A_Index] . "`r`n"
-    }
-
-    ; Add regular files
+    ; Add files to list
     Loop, % fileNames.MaxIndex() {
         listContent .= fileNames[A_Index] . "`r`n"
     }
@@ -911,7 +1018,4 @@ CreateAccountList(instance) {
     currentTime := A_Now
     FileDelete, %lastGeneratedFile%
     FileAppend, %currentTime%, %lastGeneratedFile%
-
-    ; Clean up WP metadata
-    CleanupWPMetadata()
 }
