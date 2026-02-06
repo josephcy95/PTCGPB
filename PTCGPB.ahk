@@ -108,7 +108,7 @@ OnError("ErrorHandler")
 
 githubUser := "josephcy95"
 ,repoName := "PTCGPB"
-,localVersion := "v9.5.1"
+,localVersion := "v9.5.2"
 ,scriptFolder := A_ScriptDir
 ,zipPath := A_Temp . "\update.zip"
 ,extractPath := A_Temp . "\update"
