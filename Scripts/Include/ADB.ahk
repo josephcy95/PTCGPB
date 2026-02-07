@@ -429,7 +429,6 @@ findOrLaunchAdbManager(adbManagerScriptPath := "") {
             Sleep, 3000  ; Wait 3 seconds before next attempt
         }
     }
-    MsgBox, managerWindowTitle: %managerWindowTitle%
     LogToFile("findOrLaunchAdbManager Error: Cannot find ADB Manager window '%managerWindowTitle%' after %MaxRetries% attempts.", "adbManager.txt")
     Reload
     Return False

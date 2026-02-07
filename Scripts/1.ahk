@@ -1703,7 +1703,7 @@ DirectlyPositionWindow() {
 
 restartGameInstance(reason, RL := true) {
     global friended, scriptName, packsThisRun, injectMethod, loadedAccount, DeadCheck, starCount, packsInPool, openPack, invalid, accountFile, username, stopToggle, accountFileName
-    global winTitle
+    global winTitle, useAdbManager
     isStuck := InStr(reason, "Stuck")
 
     if (Debug)
@@ -1735,6 +1735,12 @@ restartGameInstance(reason, RL := true) {
         ; Kill the entire MuMu instance
         CreateStatusMessage("Restarting MuMu instance...",,,, false)
         LogToFile("Killing MuMu instance " . winTitle . " due to: " . reason)
+
+        if(useAdbManager) {
+            adbScriptName := scriptName . ".adbmanager.ahk"
+            killAHK(adbScriptName)
+        }
+
         killInstance(winTitle)
         Sleep, 2000
 
@@ -1744,6 +1750,11 @@ restartGameInstance(reason, RL := true) {
         ; Launch new MuMu instance
         launchInstance(winTitle)
         Sleep, 5000  ; Give MuMu a head start before script reload
+
+        if(useAdbManager) {
+            findOrLaunchAdbManager(adbManagerScriptPath)
+            Sleep, 2000
+        }
 
         AppendToJsonFile(packsThisRun)
         LogToFile("Restarted MuMu instance. Reason: " reason)
@@ -4512,30 +4523,6 @@ GoToMain(fromSocial := false) {
         FindImageAndClick(120, 500, 155, 530, , "Social", 143, 518)
         FindImageAndClick(191, 393, 211, 411, , "Shop", 20, 515, 500) ;click until at main menu
     }
-}
-
-killAHK(scriptName := "") {
-    killed := 0
-    if(scriptName != "") {
-        DetectHiddenWindows, On
-        WinGet, IDList, List, ahk_class AutoHotkey
-        Loop %IDList% {
-            ID:=IDList%A_Index%
-            WinGetTitle, ATitle, ahk_id %ID%
-            if InStr(ATitle, "\" . scriptName) {
-                WinGet, pid, PID, ahk_id %ID%
-                WinKill, ahk_id %ID%
-                killed := killed + 1
-
-                ; Verify process is actually dead
-                Process, Exist, %pid%
-                if (ErrorLevel) {
-                    RunWait, taskkill /f /pid %pid% /t,, Hide
-                }
-            }
-        }
-    }
-    return killed
 }
 
 ;levelUp()
