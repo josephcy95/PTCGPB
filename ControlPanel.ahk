@@ -19,13 +19,10 @@ IniRead, Mains, Settings.ini, UserSettings, Mains, 1
 IniRead, folderPath, Settings.ini, UserSettings, folderPath, C:\Program Files\Netease
 IniRead, useADBManager, Settings.ini, UserSettings, useADBManager, 0
 
-mumuFolder = %folderPath%\MuMuPlayerGlobal-12.0
-if !FileExist(mumuFolder){
-    mumuFolder = %folderPath%\MuMu Player 12
-}
+mumuFolder := getMumuFolder(folderPath)
 
 ; Set MuMuManager.exe location
-mumuManagerPath := mumuFolder "\shell\MuMuManager.exe"
+mumuManagerPath := mumuFolder "\nx_main\MuMuManager.exe"
 
 ; Monokai Soda theme colors
 global monokaiBg := "1A1A1A" ; Darker background
@@ -1219,4 +1216,17 @@ isMuMuv5(){
     if FileExist(mumuFolder . "\nx_main")
         return true
 return false
+}
+
+getMumuFolder(folderPath) {
+    mumuFolder := folderPath . "\MuMuPlayerGlobal-12.0"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMu Player 12"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMuPlayer"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMuPlayer-12"
+    if !FileExist(mumuFolder)
+        mumuFolder := folderPath . "\MuMuPlayer12"
+    return mumuFolder
 }
